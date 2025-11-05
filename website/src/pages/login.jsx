@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+// Remember to add documentation
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,14 +11,14 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-indigo-900 via-gray-900 to-black">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-green-800 via-green-900 to-black">
       {/* Background overlay */}
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-10" />
 
       <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
         <div className="text-center mb-8">
           <img
-            src="/logo.png"
+            src=""
             alt="Fraternity Logo"
             className="w-16 h-16 mx-auto mb-2"
           />
@@ -61,7 +61,7 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full py-3 mt-2 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold rounded-xl transition duration-200"
+            className="w-full py-3 mt-2 bg-yellow-50 hover:bg-yellow-100 text-gray-900 font-semibold rounded-xl transition duration-200"
           >
             Sign In
           </button>
@@ -69,16 +69,16 @@ export default function Login() {
 
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm">
-            Forgot password?{" "}
-            <a href="#" className="text-yellow-400 hover:text-yellow-300">
-              Reset here
+            Register a New Account{" "}
+            <a href="#" className="text-yellow-50 hover:text-yellow-100">
+              here
             </a>
           </p>
         </div>
       </div>
 
       <p className="mt-8 text-gray-400 text-xs">
-        © {new Date().getFullYear()} Your Fraternity Name. All rights reserved.
+        © {new Date().getFullYear()} Delta Sigma Phi. All rights reserved.
       </p>
     </div>
   );
