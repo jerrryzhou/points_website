@@ -11,17 +11,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-green-800 via-green-900 to-black">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-green-800 via-emerald-900 to-gray-400">
       {/* Background overlay */}
+      <div className="absolute top-6 left-8 flex flex-col">
+        <h1 className="text-5xl font-bold text-white tracking-wide">ΔΣΦ</h1>
+        <h2 className="text-lg text-emerald-100 mt-1">ΔΔ</h2>
+      </div>
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-10" />
 
       <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20">
         <div className="text-center mb-8">
-          <img
-            src=""
-            alt="Fraternity Logo"
-            className="w-16 h-16 mx-auto mb-2"
-          />
           <h1 className="text-3xl font-bold text-white tracking-tight">
             Delta Sigma Phi
           </h1>
