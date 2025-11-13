@@ -2,6 +2,7 @@ import express from "express";
 import pg from "pg";
 import dotenv from "dotenv";
 import cors from "cors";
+import jwt from 'jsonwebtoken'
 
 dotenv.config();
 // console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
@@ -42,6 +43,31 @@ app.post('/api/register', async (req, res) => {
         console.error("Error creating account:", err);
          return res.status(500).json({ error: "Error creating account" });
     } 
+})
+
+app.post('/api/login', async (req, res) => {
+  const {email, password} = req.body;
+  try {
+    const result = await pool.query("SELECT * FROM members WHERE email = $1", [email]);
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(401).json({error: "User does not exist"})
+    }
+    const isMatch = password === user.password;
+    if (!isMatch) {
+      return res.status(401).json({ error: "Wrong password" });
+    }
+    const token = jwt.sign(
+      { id: user.id, email: user.email, points: user.points, position: user.position },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+    res.json({ message: "Login successful", token });
+  }
+  catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Server error" });
+  }
 })
 
 app.get("/api/test-db", async (req, res) => {

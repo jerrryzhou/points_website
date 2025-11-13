@@ -1,13 +1,40 @@
 import { useState } from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 // Remember to add documentation
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ email, password });
-    // TODO: connect to backend login API
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({email, password}),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", data.user);
+        console.log("logged in");
+        console.log(data.user)
+      } else {
+        if (data.error === "User does not exist") {
+          toast.error("User does not exist");
+        }
+        else if (data.error === "Wrong password") {
+          toast.error("Wrong password");
+        }
+        else {
+          toast.error("Something went wrong");
+        }
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+    }
   };
 
   return (
@@ -79,6 +106,7 @@ export default function Login() {
       <p className="mt-8 text-gray-400 text-xs">
         © {new Date().getFullYear()} Delta Sigma Phi. All rights reserved.
       </p>
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import AdminDashboard from './pages/adminDashboard';
 
 
 function App() {
-  return <Registration />
+  return <Login />
 }
 
 export default App;

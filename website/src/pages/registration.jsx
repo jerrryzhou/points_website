@@ -1,4 +1,6 @@
 import React, {useState} from "react";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Registration() {
   const [firstName, setFirstName] = useState("");
@@ -14,6 +16,7 @@ export default function Registration() {
     if (password !== confirmPassword) {
       // Create popup message
       setMessage("Passwords do not match");
+      toast.error("Passwords do not match")
       return;
     }
     try {
@@ -31,6 +34,7 @@ export default function Registration() {
       console.log("Status:", res.status, "OK:", res.ok);
       if (res.ok) {
         console.log("success");
+        toast.success("Account created! Tell your VPI to approve your account.")
         setMessage("Account created! Pending admin approval.");
         setFirstName("");
         setLastName("");
@@ -38,10 +42,12 @@ export default function Registration() {
         setPassword("");
         setConfirmPassword("");
       } else {
+        toast.error(data.error || "Registration failed")
         setMessage(`${data.error || "Registration failed"}`);
       }
     } catch (error) {
       console.error(error);
+      toast.error("Something went wrong")
       setMessage("Server error. Try again later.");
     }
     
@@ -121,6 +127,7 @@ export default function Registration() {
           </a>
         </p>
       </div>
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 }
