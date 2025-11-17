@@ -28,6 +28,9 @@ export default function Login() {
         else if (data.error === "Wrong password") {
           toast.error("Wrong password");
         }
+        else if (data.error === "Account not yet approved") {
+          toast.error("Account not yet approved");
+        }
         else {
           toast.error("Something went wrong");
         }

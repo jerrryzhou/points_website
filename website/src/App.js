@@ -3,11 +3,10 @@ import './css/tailwind.css';
 import Login from './pages/login';
 import Dashboard from './pages/dashboard';
 import Registration from './pages/registration';
-import AdminDashboard from './pages/adminDashboard';
-
+import AccountApprovals from './pages/accountApprovals'
 
 function App() {
-  return <Login />
+  return <Dashboard />
 }
 
 export default App;
