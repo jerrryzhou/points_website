@@ -6,7 +6,7 @@ import Registration from './pages/registration';
 import AccountApprovals from './pages/accountApprovals'
 
 function App() {
-  return <Dashboard />
+  return <Login />
 }
 
 export default App;

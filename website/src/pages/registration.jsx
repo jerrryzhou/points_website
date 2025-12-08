@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -9,6 +10,7 @@ export default function Registration() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
   // console.log(process.env.REACT_APP_API_URL)
 
   const handleSubmit = async (e) => {
@@ -41,6 +43,7 @@ export default function Registration() {
         setEmail("");
         setPassword("");
         setConfirmPassword("");
+        navigate("/login");
       } else {
         toast.error(data.error || "Registration failed")
         setMessage(`${data.error || "Registration failed"}`);

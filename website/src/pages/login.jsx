@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate } from "react-router-dom";
 import 'react-toastify/dist/ReactToastify.css';
 
 // Remember to add documentation
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,6 +24,12 @@ export default function Login() {
         localStorage.setItem("user", data.user);
         console.log("logged in");
         console.log(data.user)
+
+        if (data.user.position === "admin") {
+          navigate("/admin/approvals");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         if (data.error === "User does not exist") {
           toast.error("User does not exist");

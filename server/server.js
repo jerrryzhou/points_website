@@ -65,7 +65,18 @@ app.post('/api/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    res.json({ message: "Login successful", token });
+    // res.json({ message: "Login successful", token });
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      position: user.position,
+      points: user.points
+    }
+  });
   }
   catch (err) {
     console.log(err);
