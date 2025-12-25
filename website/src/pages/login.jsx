@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import 'react-toastify/dist/ReactToastify.css';
 
 // Remember to add documentation
-export default function Login() {
+export default function Login({ setToken, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -22,6 +22,8 @@ export default function Login() {
       if (res.ok) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        setToken(data.token);
+        setUser(data.user);
         console.log("logged in");
         console.log(data.token);
         console.log(data.user)
@@ -111,9 +113,12 @@ export default function Login() {
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm">
             Register a New Account{" "}
-            <a href="#" className="text-yellow-50 hover:text-yellow-100">
+            <Link
+              to="/register"
+              className="text-yellow-50 hover:text-yellow-100"
+            >
               here
-            </a>
+            </Link>
           </p>
         </div>
       </div>

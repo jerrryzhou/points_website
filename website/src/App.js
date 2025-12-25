@@ -4,19 +4,27 @@ import Dashboard from "./pages/dashboard";
 import Registration from "./pages/registration";
 import AccountApprovals from "./pages/accountApprovals";
 import AdminDashboard from "./pages/adminDashboard";
+import { useState } from "react"
 
 export default function App() {
-  const token = localStorage.getItem("token");
-  const userRaw = localStorage.getItem("user");
-  const user = userRaw ? JSON.parse(userRaw) : null;
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
+  
 
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
 
+      
       <Route
         path="/login"
-        element={token ? <Navigate to="/dashboard" replace /> : <Login />}
+        element={
+          token ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <Login setToken={setToken} setUser={setUser} />
+          )
+        }
       />
 
       <Route path="/register" element={<Registration />} />
