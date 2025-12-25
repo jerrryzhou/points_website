@@ -44,7 +44,7 @@ app.post('/api/register', async (req, res) => {
          return res.status(500).json({ error: "Error creating account" });
     } 
 })
-
+// Need to check if logged in user is approved or not. Use token to verify authority. Can use user data for page load or token. Refresh button for dashboard
 app.post('/api/login', async (req, res) => {
   const {email, password} = req.body;
   try {
@@ -62,7 +62,13 @@ app.post('/api/login', async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    res.json({ message: "Login successful", token });
+    res.json({ message: "Login successful", token, user: {
+    email: user.email,
+    full_name: user.full_name,
+    position: user.position,
+    points: user.points,
+    }, 
+  });
   }
   catch (err) {
     console.log(err);
