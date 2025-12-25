@@ -57,17 +57,25 @@ app.post('/api/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ error: "Wrong password" });
     }
+    if (!user.approved) {
+      return res.status(401).json({ error: "Account not yet approved" });
+    }
     const token = jwt.sign(
       { id: user.id, email: user.email, points: user.points, position: user.position },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
-    res.json({ message: "Login successful", token, user: {
-    email: user.email,
-    full_name: user.full_name,
-    position: user.position,
-    points: user.points,
-    }, 
+    // res.json({ message: "Login successful", token });
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      position: user.position,
+      points: user.points
+    }
   });
   }
   catch (err) {
@@ -75,6 +83,40 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 })
+
+app.get('/api/unapproved-users', async(req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, full_name, email, created_at FROM members WHERE approved = FALSE"
+    );
+    res.json(result.rows);
+  } catch(err) {
+    console.error("Error fetching unapproved users:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/approve-user", async (req, res) => {
+  const { id } = req.body;
+  try {
+    await pool.query("UPDATE members SET approved = TRUE WHERE id = $1", [id]);
+    res.json({ message: "User approved" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/deny-user", async (req, res) => {
+  const { id } = req.body;
+  try {
+    await pool.query("DELETE FROM members WHERE id = $1 AND approved = FALSE", [id]);
+    res.json({ message: "User denied and removed" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.get("/api/test-db", async (req, res) => {
   try {
