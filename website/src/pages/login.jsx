@@ -23,10 +23,14 @@ export default function Login() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log("logged in");
+        console.log(data.token);
+        console.log(data.user)
+        console.log(data.user.position)
 
         if (data.user.position === "admin") {
           navigate("/admin/approvals");
         } else {
+          console.log(data.token)
           navigate("/dashboard");
         }
       } else {
