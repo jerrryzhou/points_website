@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function EditMemberModal({ open, user, onClose, onSave }) {
+export default function EditMemberModal({ open, user, onClose, onDelete, onSave }) {
   const [position, setPosition] = useState("member");
   const [points, setPoints] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -80,13 +80,13 @@ export default function EditMemberModal({ open, user, onClose, onSave }) {
                   className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="member">member</option>
-                  <option value="officer">officer</option>
+                  <option value="position-holder">position holder</option>
                   <option value="admin">admin</option>
                 </select>
                 {position === "admin" && (
-                  <p className="mt-2 text-xs text-red-600">
+                  {/* <p className="mt-2 text-xs text-red-600">
                     Admins have full access.
-                  </p>
+                  </p> */}
                 )}
               </div>
 
@@ -112,6 +112,18 @@ export default function EditMemberModal({ open, user, onClose, onSave }) {
                 className="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete this member?")) {
+                    onDelete(user);
+                    onClose();
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
               </button>
               <button
                 type="submit"
