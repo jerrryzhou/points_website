@@ -30,7 +30,7 @@ export default function Login({ setToken, setUser }) {
         console.log(data.user.position)
 
         if (data.user.position === "admin") {
-          navigate("/admin/approvals");
+          navigate("/admin/dashboard");
         } else {
           console.log(data.token)
           navigate("/dashboard");

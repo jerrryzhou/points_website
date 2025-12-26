@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function AdminNavbar() {
   return (
     <nav className="bg-emerald-50 border-b border-emerald-100 px-6 py-3 flex items-center justify-between">
@@ -8,21 +10,33 @@ export default function AdminNavbar() {
 
       {/* Links */}
       <div className="hidden md:flex space-x-6">
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
+        <Link
+          to="/admin/dashboard"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
           Dashboard
-        </a>
+        </Link>
         <a href="#" className="text-green-900 hover:text-green-700 font-medium">
           Fines
         </a>
         <a href="#" className="text-green-900 hover:text-green-700 font-medium">
           Leaderboard
         </a>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
+        <Link
+          to="/admin/approvals"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
           Account Approvals
-        </a>
+        </Link>
         <a href="#" className="text-green-900 hover:text-green-700 font-medium">
           Point Approvals
         </a>
+        <Link
+          to="/admin/manage"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
+          Manage
+        </Link>
       </div>
 
       {/* Profile Icon */}

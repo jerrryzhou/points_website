@@ -97,6 +97,18 @@ app.get('/api/unapproved-users', async(req, res) => {
   }
 });
 
+app.get('/api/get-approved-users', async(req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT full_name, email, points, position FROM members WHERE approved = TRUE"
+    );
+    res.json(result.rows);
+  } catch(err) {
+    console.error("Error fetching approved users:", err);
+    res.status(500).json({ error: "Server error"})
+  }
+});
+
 app.post("/api/approve-user", async (req, res) => {
   const { id } = req.body;
   try {

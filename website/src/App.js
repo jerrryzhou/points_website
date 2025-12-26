@@ -4,6 +4,7 @@ import Dashboard from "./pages/dashboard";
 import Registration from "./pages/registration";
 import AccountApprovals from "./pages/accountApprovals";
 import AdminDashboard from "./pages/adminDashboard";
+import Manage from "./pages/manage";
 import { useState } from "react"
 
 export default function App() {
@@ -20,7 +21,11 @@ export default function App() {
         path="/login"
         element={
           token ? (
-            <Navigate to="/dashboard" replace />
+            user?.position === "admin" ? (
+              <Navigate to="/admin/dashboard" replace />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
           ) : (
             <Login setToken={setToken} setUser={setUser} />
           )
@@ -51,6 +56,17 @@ export default function App() {
             : <Navigate to="/login" replace />
         }
       />
+
+      <Route
+      path="/admin/manage"
+      element={
+        token && user?.position === "admin"
+        ? <Manage />
+        : <Navigate to="/login" replace />
+      }
+      />
+      
     </Routes>
+
   );
 }
