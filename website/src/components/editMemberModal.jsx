@@ -83,11 +83,11 @@ export default function EditMemberModal({ open, user, onClose, onDelete, onSave 
                   <option value="position-holder">position holder</option>
                   <option value="admin">admin</option>
                 </select>
-                {position === "admin" && (
-                  {/* <p className="mt-2 text-xs text-red-600">
+                {/* {position === "admin" && (
+                  <p className="mt-2 text-xs text-red-600">
                     Admins have full access.
-                  </p> */}
-                )}
+                  </p>
+                )} */}
               </div>
 
               <div>

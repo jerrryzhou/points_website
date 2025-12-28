@@ -1,11 +1,13 @@
 import AdminNavbar from "../components/adminNavabar";
 import MembersTable from "../components/table";
 import EditMemberModal from "../components/editMemberModal";
-import { useState, useEffect } from "react"
+import { useState, useMemo, useEffect } from "react"
 
 export default function Manage() {
     const [users, setUsers] = useState([]);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [positionFilter, setPositionFilter] = useState("all");
     
         useEffect(() => {
         fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`)
@@ -18,6 +20,16 @@ export default function Manage() {
         setSelectedUser(user);
     };
     
+    const filteredUsers = useMemo(() => {
+        const q = searchTerm.trim().toLocaleLowerCase();
+        return users.filter((u) => {
+            const matchesSearch = !q || u.full_name?.toLowerCase().includes(q);
+
+            const matchesRole = positionFilter === "all" || u.position === positionFilter;
+            return matchesSearch && matchesRole;
+        });
+
+    }, [users, searchTerm, positionFilter]);
     const handleClose = () => setSelectedUser(null);
 
     const handleDelete = async (userToDelete) => {
@@ -79,6 +91,25 @@ export default function Manage() {
     return (
         <div className="min-h-screen bg-green-600 text-gray-800">
             <AdminNavbar/>
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name or email..."
+                    className="w-full sm:max-w-md rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+
+                <select
+                    value={positionFilter}
+                    onChange={(e) => setPositionFilter(e.target.value)}
+                    className="w-full sm:w-56 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                    <option value="all">All roles</option>
+                    <option value="member">member</option>
+                    <option value="position-holder">position holder</option>
+                    <option value="admin">admin</option>
+                </select>
+                </div>
             <div className="max-w-6xl mx-auto mt-10 px-4">
                 <MembersTable users={users} onEdit={handleEditUser} />
             </div>
