@@ -20,15 +20,60 @@ export default function Manage() {
     
     const handleClose = () => setSelectedUser(null);
 
-    const handleSave = async (updates) => {
-        // TEMP: update UI locally until you add the backend PATCH route
-        setUsers((prev) =>
-        prev.map((u) =>
-            u.email === selectedUser.email ? { ...u, ...updates } : u
-        )
-        );
+    const handleDelete = async (userToDelete) => {
+        try {
+            const res = await fetch(
+            `${process.env.REACT_APP_API_URL}/api/members/${userToDelete.id}`,
+            {
+                method: "DELETE",
+                headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+            }
+            );
 
-        // When your backend is ready, replace the above with a PATCH call.
+            if (!res.ok) throw new Error("Delete failed");
+
+            setUsers((prev) =>
+            prev.filter((u) => u.email !== userToDelete.email)
+            );
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete user");
+            }
+        };
+
+
+    const handleSave = async (updates) => {
+        try {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/api/members/${selectedUser.id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${localStorage.getItem("token")}`
+                    },
+                    body: JSON.stringify(updates),
+                }
+            )
+             if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                console.log("SAVE ERROR BODY:", errBody);
+                throw new Error(errBody.error || "Save failed");
+                }
+
+
+            const updatedUser = await res.json();
+
+            setUsers((prev) =>
+                prev.map((u) =>
+                    u.email === updatedUser.email ? updatedUser : u
+                )
+            );
+        } catch(err) {
+            console.error(err);
+            alert("Failed to save changes");
+        }
     };
     // Add delete button, error handling for point inputs, roles, add error checking for blank names in registration
     return (
@@ -40,8 +85,9 @@ export default function Manage() {
             <EditMemberModal
                 open={!!selectedUser}
                 user={selectedUser}
-                onClose={handleClose}
+                onClose={() => setSelectedUser(null)}
                 onSave={handleSave}
+                onDelete={handleDelete}
             />
         </div>
         );

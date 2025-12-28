@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import jwt from 'jsonwebtoken'
 
+const ALLOWED_POSITIONS = new Set(["member", "position-holder", "admin"]);
+
 dotenv.config();
 // console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
 
@@ -21,6 +23,94 @@ const pool = new pg.Pool({
 app.get('/', (req, res) => {
     res.send("Server running")
 })
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer") ? authHeader.slice(7) : null
+  if (!token) {
+    return res.status(401).json({ error: "Missing token" });
+  }
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = payload;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+   
+}
+
+function requireAdmin(req, res, next) {
+  if (req.user?.position !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  next();
+}
+
+app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { position, points} = req.body;
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+    if (position !== undefined && !ALLOWED_POSITIONS.has(position)) {
+      return res.status(400).json({ error: "Invalid position" });
+    }
+    if (points !== undefined && (!Number.isFinite(points))) {
+      return res.status(400).json({error: "Invalid points"});
+    }
+    if (req.user.id === id && position && position !== "admin") {
+      return res.status(400).json({ error: "You cannot change your own admin role" });
+    }
+
+    const result = await pool.query(
+      `UPDATE members
+      SET position = COALESCE($1, position),
+      points = COALESCE($2, points)
+      WHERE id = $3
+      RETURNING id, full_name, email, points, position, approved`,
+      [position ?? null, points ?? null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Member not found"});
+    }
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    console.error("Error updating member:", err);
+    res.status(500).json({ error: "Server error"});
+  }
+});
+
+// app.delete("/api/members/:id", async (req, res) => {
+app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+
+    // Optional safety: prevent deleting yourself
+    if (req.user.id === id) {
+      return res.status(400).json({ error: "You cannot delete yourself" });
+    }
+
+    const result = await pool.query("DELETE FROM members WHERE id = $1 RETURNING id", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Member not found" });
+    }
+
+    res.sendStatus(204);
+  } catch (err) {
+    console.error("Error deleting member:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 // Register api, creates new member in database
 app.post('/api/register', async (req, res) => { 
@@ -100,7 +190,7 @@ app.get('/api/unapproved-users', async(req, res) => {
 app.get('/api/get-approved-users', async(req, res) => {
   try {
     const result = await pool.query(
-      "SELECT full_name, email, points, position FROM members WHERE approved = TRUE"
+      "SELECT id, full_name, email, points, position FROM members WHERE approved = TRUE"
     );
     res.json(result.rows);
   } catch(err) {
