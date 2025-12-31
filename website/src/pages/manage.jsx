@@ -91,7 +91,27 @@ export default function Manage() {
     return (
         <div className="min-h-screen bg-green-600 text-gray-800">
             <AdminNavbar/>
-            <div className="bg-white rounded-xl shadow p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            {/* <div className="bg-white rounded-xl shadow p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                <input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name or email..."
+                    className="w-full sm:max-w-md rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+
+                <select
+                    value={positionFilter}
+                    onChange={(e) => setPositionFilter(e.target.value)}
+                    className="w-full sm:w-56 rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                    <option value="all">All roles</option>
+                    <option value="member">member</option>
+                    <option value="position-holder">position holder</option>
+                    <option value="admin">admin</option>
+                </select>
+                </div> */}
+            <div className="max-w-6xl mx-auto mt-10 px-4">
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col mb-3 sm:flex-row gap-3 sm:items-center sm:justify-between">
                 <input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -110,8 +130,7 @@ export default function Manage() {
                     <option value="admin">admin</option>
                 </select>
                 </div>
-            <div className="max-w-6xl mx-auto mt-10 px-4">
-                <MembersTable users={users} onEdit={handleEditUser} />
+                <MembersTable users={filteredUsers} onEdit={handleEditUser} />
             </div>
             <EditMemberModal
                 open={!!selectedUser}

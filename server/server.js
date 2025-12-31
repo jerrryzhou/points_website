@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer") ? authHeader.slice(7) : null
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null
   if (!token) {
     return res.status(401).json({ error: "Missing token" });
   }
@@ -229,6 +229,197 @@ app.get("/api/test-db", async (req, res) => {
     console.error("Database connection error:", err);
     res.status(500).json({ error: "Database connection failed" });
   }
+});
+
+app.post("/api/point-requests", authenticateToken, async (req, res) => {
+  try {
+    const giverId = req.user.id;
+    const { recipientUserId, points, reason } = req.body;
+
+    if (!recipientUserId) return res.status(400).json({ error: "recipientUserId is required" });
+    if (!Number.isInteger(points)) return res.status(400).json({ error: "points must be a positive integer" });
+    if (!reason || !reason.trim()) return res.status(400).json({ error: "reason is required" });
+
+    // if (String(recipientUserId) === String(giverId)) {
+    //   return res.status(400).json({ error: "You cannot give points to yourself" });
+    // }
+
+    // Optional: ensure both users are approved
+    const check = await pool.query(
+      `SELECT id, approved FROM members WHERE id = ANY($1::bigint[])`,
+      [[giverId, recipientUserId]]
+    );
+    if (check.rows.length !== 2 || check.rows.some(r => !r.approved)) {
+      return res.status(400).json({ error: "Both giver and recipient must be approved members" });
+    }
+
+    const result = await pool.query(
+      `
+      INSERT INTO point_requests (recipient_user_id, giver_user_id, points, reason)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, recipient_user_id, giver_user_id, points, reason, status, created_at
+      `,
+      [recipientUserId, giverId, points, reason.trim()]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Error creating point request:", err);
+    res.status(500).json({ error: "Failed to create point request" });
+  }
+});
+
+app.get("/api/point-requests", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const status = (req.query.status || "pending").toLowerCase();
+    if (!["pending", "approved", "denied"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT pr.*,
+             g.full_name AS giver_name,
+             r.full_name AS recipient_name
+      FROM point_requests pr
+      JOIN members g ON g.id = pr.giver_user_id
+      JOIN members r ON r.id = pr.recipient_user_id
+      WHERE pr.status = $1
+      ORDER BY pr.created_at DESC
+      `,
+      [status]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching point requests:", err);
+    res.status(500).json({ error: "Failed to load point requests" });
+  }
+});
+
+app.post("/api/point-requests/:id/approve", authenticateToken, requireAdmin, async (req, res) => {
+  const requestId = Number(req.params.id);
+  const adminId = req.user.id;
+
+  if (!Number.isInteger(requestId)) return res.status(400).json({ error: "Invalid request id" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `
+      WITH updated AS (
+        UPDATE point_requests
+        SET status = 'approved',
+            reviewed_at = now(),
+            reviewed_by_user_id = $2
+        WHERE id = $1 AND status = 'pending'
+        RETURNING id, recipient_user_id, giver_user_id, points, reason
+      ),
+      inserted AS (
+        INSERT INTO point_transactions (user_id, source_user_id, points, reason, request_id)
+        SELECT recipient_user_id, giver_user_id, points, reason, id
+        FROM updated
+        RETURNING user_id, points
+      )
+      UPDATE members m
+      SET points = m.points + inserted.points
+      FROM inserted
+      WHERE m.id = inserted.user_id
+      RETURNING m.id, m.full_name, m.points;
+      `,
+      [requestId, adminId]
+    );
+
+    await client.query("COMMIT");
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({ error: "Request not pending (already reviewed or not found)" });
+    }
+
+    res.json({ ok: true, updatedMember: result.rows[0] });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Approve error:", err);
+
+    // unique violation on request_id means it was already inserted
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "Request already approved" });
+    }
+
+    res.status(500).json({ error: "Failed to approve request" });
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/point-requests/:id/deny", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    const adminId = req.user.id;
+    const denyReason = (req.body?.denyReason || "").trim();
+
+    if (!Number.isInteger(requestId)) return res.status(400).json({ error: "Invalid request id" });
+
+    const result = await pool.query(
+      `
+      UPDATE point_requests
+      SET status = 'denied',
+          reviewed_at = now(),
+          reviewed_by_user_id = $2,
+          deny_reason = $3
+      WHERE id = $1 AND status = 'pending'
+      RETURNING *
+      `,
+      [requestId, adminId, denyReason || null]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(409).json({ error: "Request not pending (already reviewed or not found)" });
+    }
+
+    res.json({ ok: true, request: result.rows[0] });
+  } catch (err) {
+    console.error("Deny error:", err);
+    res.status(500).json({ error: "Failed to deny request" });
+  }
+});
+
+app.get("/api/me/point-history", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `
+      SELECT
+        pt.id,
+        pt.points,
+        pt.reason,
+        pt.created_at,
+        g.full_name AS giver_name
+      FROM point_transactions pt
+      JOIN members g ON g.id = pt.source_user_id
+      WHERE pt.user_id = $1
+      ORDER BY pt.created_at DESC
+      LIMIT 100
+      `,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("History error:", err);
+    res.status(500).json({ error: "Failed to load point history" });
+  }
+});
+
+app.get("/api/me", authenticateToken, async (req, res) => {
+  const result = await pool.query(
+    "SELECT id, full_name, email, points, position FROM members WHERE id = $1",
+    [req.user.id]
+  );
+  res.json(result.rows[0]);
 });
 
 // Start server
