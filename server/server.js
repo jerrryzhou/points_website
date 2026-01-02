@@ -414,6 +414,56 @@ app.get("/api/me/point-history", authenticateToken, async (req, res) => {
   }
 });
 
+app.get("/api/me/point-requests", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `
+      SELECT
+        pr.id,
+        pr.points,
+        pr.reason,
+        pr.status,
+        pr.created_at,
+        pr.reviewed_at,
+        g.full_name AS giver_name
+      FROM point_requests pr
+      JOIN members g ON g.id = pr.giver_user_id
+      WHERE pr.recipient_user_id = $1
+      ORDER BY pr.created_at DESC
+      LIMIT 100
+      `,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load point requests" });
+  }
+});
+
+app.get("/api/leaderboard", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT id, full_name, points, position
+      FROM members
+      WHERE approved = TRUE
+      ORDER BY points DESC, full_name ASC
+      `
+    );
+
+    // small cache to reduce repeated hits
+    res.set("Cache-Control", "public, max-age=30");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Leaderboard error:", err);
+    res.status(500).json({ error: "Failed to load leaderboard" });
+  }
+});
+
 app.get("/api/me", authenticateToken, async (req, res) => {
   const result = await pool.query(
     "SELECT id, full_name, email, points, position FROM members WHERE id = $1",

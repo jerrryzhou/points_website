@@ -5,6 +5,8 @@ import Registration from "./pages/registration";
 import AccountApprovals from "./pages/accountApprovals";
 import AdminDashboard from "./pages/adminDashboard";
 import Manage from "./pages/manage";
+import PointApprovals from "./pages/pointApprovals";
+import Leaderboard from "./pages/leaderboard";
 import { useState } from "react"
 
 export default function App() {
@@ -40,6 +42,11 @@ export default function App() {
       />
 
       <Route
+        path="/leaderboard"
+        element={token ? <Leaderboard /> : <Navigate to="/login" replace />}
+      />
+
+      <Route
         path="/admin/approvals"
         element={
           token && user?.position === "admin"
@@ -62,6 +69,15 @@ export default function App() {
       element={
         token && user?.position === "admin"
         ? <Manage />
+        : <Navigate to="/login" replace />
+      }
+      />
+
+      <Route
+      path="/admin/point-approvals"
+      element={
+        token && user?.position === "admin"
+        ? <PointApprovals />
         : <Navigate to="/login" replace />
       }
       />

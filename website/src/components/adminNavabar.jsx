@@ -28,9 +28,12 @@ export default function AdminNavbar() {
         >
           Account Approvals
         </Link>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
+        <Link
+          to="/admin/point-approvals"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
           Point Approvals
-        </a>
+        </Link>
         <Link
           to="/admin/manage"
           className="text-green-900 hover:text-green-700 font-medium"

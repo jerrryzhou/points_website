@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Navbar() {
   return (
     <nav className="bg-emerald-50 border-b border-emerald-100 px-6 py-3 flex items-center justify-between">
@@ -8,18 +10,22 @@ export default function Navbar() {
 
       {/* Links */}
       <div className="hidden md:flex space-x-6">
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
+        <Link
+          to="/dashboard"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
           Dashboard
-        </a>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
-          Events
-        </a>
+        </Link>
+        <Link
+          to="/leaderboard"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
+          Leaderboard
+        </Link>
         <a href="#" className="text-green-900 hover:text-green-700 font-medium">
           Fines
         </a>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
-          Leaderboard
-        </a>
+       
       </div>
 
       {/* Profile Icon */}

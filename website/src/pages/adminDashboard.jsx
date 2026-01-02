@@ -1,11 +1,22 @@
 import AdminNavbar from "../components/adminNavabar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
+import { isJwtExpired } from "../utils/jwt";
 
 export default function AdminDashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
   const [openGivePoints, setOpenGivePoints] = useState(false);
   const [members, setMembers] = useState([]);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token && isJwtExpired(token)) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  }
+}, []);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`, {
@@ -15,6 +26,30 @@ export default function AdminDashboard() {
       .then(setMembers)
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+  fetch(`${process.env.REACT_APP_API_URL}/api/me/point-requests`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+  })
+    .then((r) => r.json())
+    .then(setHistory)
+    .catch(console.error);
+}, []);
+
+function StatusBadge({ status }) {
+  const styles =
+    status === "approved"
+      ? "bg-green-500/20 text-green-100 border-green-400/30"
+      : status === "pending"
+      ? "bg-yellow-500/20 text-yellow-100 border-yellow-400/30"
+      : "bg-red-500/20 text-red-100 border-red-400/30";
+
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full border ${styles}`}>
+      {status}
+    </span>
+  );
+}
 
     return (
         <div className="min-h-screen bg-green-600 text-gray-800">
@@ -39,18 +74,34 @@ export default function AdminDashboard() {
               </div>
               
               <ul className="divide-y divide-gray-700">
-                <li className="py-3 flex justify-between">
-                  <span className="text-gray-200">Attended Chapter Meeting</span>
-                  <span className="text-gray-200 text-sm">Nov 3, 2025</span>
-                </li>
-                <li className="py-3 flex justify-between">
-                  <span className="text-gray-200">Volunteered: Community Cleanup</span>
-                  <span className="text-gray-200 text-sm">Oct 28, 2025</span>
-                </li>
-                <li className="py-3 flex justify-between">
-                  <span className="text-gray-200">Paid Membership Dues</span>
-                  <span className="text-gray-200 text-sm">Oct 20, 2025</span>
-                </li>
+                {history.map((h) => (
+                  <li key={h.id} className="py-3 flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-200 font-medium truncate">{h.reason}</span>
+
+                        <StatusBadge status={h.status} />
+                      </div>
+
+                      <div className="text-gray-300 text-sm">
+                        From: {h.giver_name}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-gray-200 font-semibold">
+                        {h.points > 0 ? `+${h.points}` : h.points}
+                      </div>
+                      <div className="text-gray-200 text-sm">
+                        {new Date(h.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+
+                {history.length === 0 && (
+                  <li className="py-3 text-gray-200 text-sm">No point history yet.</li>
+                )}
               </ul>
             </div>
             <GivePointsModal
