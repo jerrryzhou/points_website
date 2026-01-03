@@ -13,6 +13,9 @@ export default function AdminNavbar({ setToken, setUser }) {
     if (token && isJwtExpired(token)) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
+      logout();
       navigate("/login", { replace: true });
     }
   }, [navigate]);
@@ -40,9 +43,12 @@ export default function AdminNavbar({ setToken, setUser }) {
         <a href="#" className="text-green-900 hover:text-green-700 font-medium">
           Fines
         </a>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
+        <Link
+          to="/leaderboard"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
           Leaderboard
-        </a>
+        </Link>
         <Link
           to="/admin/approvals"
           className="text-green-900 hover:text-green-700 font-medium"

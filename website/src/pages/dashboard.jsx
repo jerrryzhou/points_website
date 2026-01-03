@@ -2,6 +2,7 @@ import Navbar from "../components/navbar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
 // import { isJwtExpired } from "../utils/jwt";
+import PageWrapper from "../components/pageWrapper";
 
 export default function Dashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -44,7 +45,8 @@ function StatusBadge({ status }) {
 }
 
     return (
-        <div className="min-h-screen bg-green-600 text-gray-800">
+      <PageWrapper>
+        {/* <div className="min-h-screen bg-green-600 text-gray-800"> */}
             <Navbar/>
             <div className="flex flex-col items-center justify-center mt-20">
                 <h1 className="text-5xl font-bold text-white mb-6">
@@ -102,6 +104,7 @@ function StatusBadge({ status }) {
               members={members}
               giverId={user?.id}
             />
-        </div>
+        {/* </div> */}
+        </PageWrapper>
     );
 }

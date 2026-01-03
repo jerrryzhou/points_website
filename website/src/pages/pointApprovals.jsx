@@ -83,14 +83,14 @@ export default function PointApprovals() {
         Pending Point Approvals
       </h1>
 
-      <div className="max-w-4xl mx-auto bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-lg">
+      <div className="max-w-4xl mx-auto bg-white/20 backdrop-blur-lg p-4 rounded-xl shadow-lg">
         {pendingRequests.length === 0 ? (
           <p className="text-white text-lg">No point requests pending approval.</p>
         ) : (
           pendingRequests.map((req) => (
             <div
               key={req.id}
-              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white/10 p-4 rounded-lg mb-3"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white/10 p-4 rounded-lg mb-3 last:mb-0"
             >
               <div>
                 <p className="text-xl font-semibold text-white">
