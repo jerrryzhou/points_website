@@ -1,7 +1,7 @@
 import Navbar from "../components/navbar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
-import { isJwtExpired } from "../utils/jwt";
+// import { isJwtExpired } from "../utils/jwt";
 
 export default function Dashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -9,14 +9,6 @@ export default function Dashboard() {
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
   
-  useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (token && isJwtExpired(token)) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
-  }
-  }, []);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`, {

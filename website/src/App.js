@@ -7,11 +7,14 @@ import AdminDashboard from "./pages/adminDashboard";
 import Manage from "./pages/manage";
 import PointApprovals from "./pages/pointApprovals";
 import Leaderboard from "./pages/leaderboard";
+import { useAuth } from "./components/protectedRoute";
 import { useState } from "react"
 
 export default function App() {
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
+  const { token, user } = useAuth();
+  // const [token, setToken] = useState(() => localStorage.getItem("token"));
+  // const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
+  
   
 
   return (
@@ -29,7 +32,7 @@ export default function App() {
               <Navigate to="/dashboard" replace />
             )
           ) : (
-            <Login setToken={setToken} setUser={setUser} />
+            <Login  setToken={token} setUser={user}/>
           )
         }
       />
@@ -50,7 +53,7 @@ export default function App() {
         path="/admin/approvals"
         element={
           token && user?.position === "admin"
-            ? <AccountApprovals />
+            ? <AccountApprovals  />
             : <Navigate to="/login" replace />
         }
       />

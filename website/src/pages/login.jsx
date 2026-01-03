@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../components/protectedRoute";
 import 'react-toastify/dist/ReactToastify.css';
 
 // Remember to add documentation
-export default function Login({ setToken, setUser }) {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,8 +24,7 @@ export default function Login({ setToken, setUser }) {
       if (res.ok) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
-        setToken(data.token);
-        setUser(data.user);
+        login(data.token, data.user);
         console.log("logged in");
         console.log(data.token);
         console.log(data.user)

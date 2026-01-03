@@ -1,7 +1,7 @@
 import AdminNavbar from "../components/adminNavabar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
-import { isJwtExpired } from "../utils/jwt";
+// import { isJwtExpired } from "../utils/jwt";
 
 export default function AdminDashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -9,14 +9,6 @@ export default function AdminDashboard() {
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
 
-  useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (token && isJwtExpired(token)) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
-  }
-}, []);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`, {
@@ -31,9 +23,21 @@ export default function AdminDashboard() {
   fetch(`${process.env.REACT_APP_API_URL}/api/me/point-requests`, {
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
   })
-    .then((r) => r.json())
-    .then(setHistory)
-    .catch(console.error);
+    .then(async (r) => {
+      if (!r.ok) {
+        // token expired / unauthorized / server error
+        return [];
+      }
+      const data = await r.json();
+      return Array.isArray(data) ? data : [];
+    })
+    .then((safeHistory) => {
+      setHistory(safeHistory);
+    })
+    .catch((err) => {
+      console.error(err);
+      setHistory([]);
+    });
 }, []);
 
 function StatusBadge({ status }) {
@@ -74,7 +78,7 @@ function StatusBadge({ status }) {
               </div>
               
               <ul className="divide-y divide-gray-700">
-                {history.map((h) => (
+                {Array.isArray(history) && history.map((h) => (
                   <li key={h.id} className="py-3 flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
