@@ -14,6 +14,10 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      toast.error("Email and password are required");
+      return;
+    }
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/api/login`, {
         method: "POST",
@@ -26,9 +30,9 @@ export default function Login() {
         localStorage.setItem("user", JSON.stringify(data.user));
         login(data.token, data.user);
         console.log("logged in");
-        console.log(data.token);
-        console.log(data.user)
-        console.log(data.user.position)
+        // console.log(data.token);
+        // console.log(data.user)
+        // console.log(data.user.position)
 
         if (data.user.position === "admin") {
           navigate("/admin/dashboard");

@@ -13,8 +13,6 @@ export default function AdminNavbar({ setToken, setUser }) {
     if (token && isJwtExpired(token)) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      setToken(null);
-      setUser(null);
       logout();
       navigate("/login", { replace: true });
     }
