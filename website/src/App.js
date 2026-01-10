@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Registration from "./pages/registration";
@@ -9,8 +9,10 @@ import PointApprovals from "./pages/pointApprovals";
 import Leaderboard from "./pages/leaderboard";
 import { useAuth } from "./components/protectedRoute";
 import { useState } from "react"
+import { AnimatePresence } from "framer-motion";
 
 export default function App() {
+  const location = useLocation();
   const { token, user } = useAuth();
   // const [token, setToken] = useState(() => localStorage.getItem("token"));
   // const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
@@ -18,7 +20,8 @@ export default function App() {
   
 
   return (
-    <Routes>
+    <AnimatePresence mode = "wait">
+    <Routes location={location} key={location.pathname}>
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       
@@ -86,6 +89,6 @@ export default function App() {
       />
       
     </Routes>
-
+      </AnimatePresence>
   );
 }

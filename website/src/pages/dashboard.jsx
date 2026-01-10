@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
 // import { isJwtExpired } from "../utils/jwt";
 import PageWrapper from "../components/pageWrapper";
+import { motion } from "framer-motion"
 
 export default function Dashboard() {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -45,9 +46,16 @@ function StatusBadge({ status }) {
 }
 
     return (
-      <PageWrapper>
-        {/* <div className="min-h-screen bg-green-600 text-gray-800"> */}
+      
+        <div className="min-h-screen bg-green-600 text-gray-800">
             <Navbar/>
+            <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="min-h-screen"
+    >
             <div className="flex flex-col items-center justify-center mt-20">
                 <h1 className="text-5xl font-bold text-white mb-6">
                  {user ? user.full_name : "Brother name"}
@@ -104,7 +112,8 @@ function StatusBadge({ status }) {
               members={members}
               giverId={user?.id}
             />
-        {/* </div> */}
-        </PageWrapper>
+             </motion.div>
+        </div>
+        
     );
 }

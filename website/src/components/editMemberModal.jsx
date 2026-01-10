@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function EditMemberModal({ open, user, onClose, onDelete, onSave }) {
   const [position, setPosition] = useState("member");
@@ -29,16 +30,30 @@ export default function EditMemberModal({ open, user, onClose, onDelete, onSave 
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={saving ? undefined : onClose}
-      />
+  <AnimatePresence>
+    {open && (
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        {/* Backdrop (ONLY backdrop) */}
+        <div
+          className="absolute inset-0 bg-black/60"
+          onMouseDown={saving ? undefined : onClose}
+        />
 
-      {/* Modal */}
-      <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+        {/* Modal */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="relative w-full max-w-lg mx-4 rounded-2xl bg-white shadow-xl"
+          onMouseDown={(e) => e.stopPropagation()} // prevent backdrop close when clicking modal
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="px-6 py-4 border-b">
             <h3 className="text-lg font-semibold text-gray-900">Edit Member</h3>
             <p className="text-sm text-gray-500">
@@ -83,11 +98,6 @@ export default function EditMemberModal({ open, user, onClose, onDelete, onSave 
                   <option value="position-holder">position holder</option>
                   <option value="admin">admin</option>
                 </select>
-                {/* {position === "admin" && (
-                  <p className="mt-2 text-xs text-red-600">
-                    Admins have full access.
-                  </p>
-                )} */}
               </div>
 
               <div>
@@ -113,10 +123,13 @@ export default function EditMemberModal({ open, user, onClose, onDelete, onSave 
               >
                 Cancel
               </button>
+
               <button
                 type="button"
                 onClick={() => {
-                  if (window.confirm("Are you sure you want to delete this member?")) {
+                  if (
+                    window.confirm("Are you sure you want to delete this member?")
+                  ) {
                     onDelete(user);
                     onClose();
                   }
@@ -125,6 +138,7 @@ export default function EditMemberModal({ open, user, onClose, onDelete, onSave 
               >
                 Delete
               </button>
+
               <button
                 type="submit"
                 disabled={saving}
@@ -134,8 +148,9 @@ export default function EditMemberModal({ open, user, onClose, onDelete, onSave 
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-  );
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 }
