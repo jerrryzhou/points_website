@@ -38,9 +38,6 @@ export default function AdminNavbar({ setToken, setUser }) {
         >
           Dashboard
         </Link>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
-          Fines
-        </a>
         <Link
           to="/leaderboard"
           className="text-green-900 hover:text-green-700 font-medium"
@@ -63,8 +60,13 @@ export default function AdminNavbar({ setToken, setUser }) {
           to="/admin/manage"
           className="text-green-900 hover:text-green-700 font-medium"
         >
+        
           Manage
         </Link>
+        
+        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
+          Point History
+        </a>
       </div>
 
       {/* Profile Icon */}

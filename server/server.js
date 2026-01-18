@@ -3,6 +3,11 @@ import pg from "pg";
 import dotenv from "dotenv";
 import cors from "cors";
 import jwt from 'jsonwebtoken'
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+// import { hashToken, hashPassword } from "./security.js";
+import rateLimit from "express-rate-limit";
+import nodemailer from "nodemailer";
 
 const ALLOWED_POSITIONS = new Set(["member", "position-holder", "admin"]);
 
@@ -19,6 +24,20 @@ const pool = new pg.Pool({
     rejectUnauthorized: false,
   },
 });
+
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+});
+
+export function hashToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function hashPassword(password) {
+  const saltRounds = 12;
+  return bcrypt.hash(password, saltRounds);
+}
 
 app.get('/', (req, res) => {
     res.send("Server running")
@@ -46,6 +65,90 @@ function requireAdmin(req, res, next) {
   }
   next();
 }
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+export async function sendResetEmail(to, resetLink) {
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM, // e.g. "no-reply@yourdomain.com"
+    to,
+    subject: "Reset your password",
+    text: `Click this link to reset your password: ${resetLink}\nThis link expires in 1 hour.`,
+  });
+}
+
+app.post("/api/auth/forgot-password", forgotLimiter, async (req, res) => {
+  const {email} = req.body;
+  const generic = {message: "If an account exists for that email, a reset link has been sent"};
+  if (!email) return res.status(200).json(generic);
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  const user = await pool.query("SELECT id FROM members WHERE email = $1 LIMIT 1",
+    [email]
+  );
+  if (user.rowCount === 0) return res.status(200).json(generic);
+
+  await pool.query(
+    `UPDATE members
+    SET password_reset_token_hash = $1,
+        password_reset_expires_at = $2
+    WHERE email = $3`,
+    [tokenHash, expiresAt, email]
+  );
+
+  // send email
+  const resetLink = `${process.env.FRONTED_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  await sendResetEmail(email, resetLink)
+  return res.status(200).json(generic)
+})
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  const { email, token, new_password } = req.body;
+  if (!email || !token || !new_password) {
+    return res.status(400).json({error:"Missing fields"});
+  }
+  const tokenHash = hashToken(token);
+  const result = await pool.query(
+    `SELECT id, password_reset_expires_at
+    FROM members
+    WHERE email = $1 AND password_reset_token_hash = $2
+    LIMIT 1`,
+    [email, tokenHash]
+  );
+
+  if (result.rowCount === 0) {
+    return res.status(400).json({error: "Invalid or expired token"});
+  }
+
+  const {id, password_reset_expires_at} = result.rows[0];
+  if (!password_reset_expires_at || new Date(password_reset_expires_at) < new Date()) {
+    return res.status(400).json({error: "Invalid or expired token"});
+  }
+
+  const passwordHash = await hashPassword(new_password);
+
+  await pool.query(
+    `UPDATE members
+    SET password = $1
+    password_reset_token_hash = NULL,
+    password_reset_expires_at = NULL
+    WHERE id = $2`,
+    [passwordHash, id]
+  );
+
+  return res.status(200).json({message: "Password reset successful "})
+});
 
 app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -117,11 +220,12 @@ app.post('/api/register', async (req, res) => {
     const currentDate = new Date();
     const { first_name, last_name, email, password, pledge_class} = req.body;
     try {
+        const passwordHash = await bcrypt.hash(password, 12);
         const result = await pool.query(
             `INSERT INTO members (full_name, email, password, position, points, created_at, approved, pledge_class)
             VALUES ($1, $2, $3, 'member', 0, $4, FALSE, $5)
             RETURNING full_name, email, position, points, created_at, approved, pledge_class`,
-            [first_name + " " + last_name, email, password, currentDate, pledge_class]
+            [first_name + " " + last_name, email, passwordHash, currentDate, pledge_class]
         );
 
         return res.status(200).json({
@@ -143,9 +247,13 @@ app.post('/api/login', async (req, res) => {
     if (!user) {
       return res.status(401).json({error: "User does not exist"})
     }
-    const isMatch = password === user.password;
-    if (!isMatch) {
-      return res.status(401).json({ error: "Wrong password" });
+    // const isMatch = password === user.password;
+    // if (!isMatch) {
+    //   return res.status(401).json({ error: "Wrong password" });
+    // }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      return res.status(401).json({ error: "Invalid email or password" });
     }
     if (!user.approved) {
       return res.status(401).json({ error: "Account not yet approved" });

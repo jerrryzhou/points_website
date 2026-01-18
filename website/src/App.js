@@ -7,6 +7,8 @@ import AdminDashboard from "./pages/adminDashboard";
 import Manage from "./pages/manage";
 import PointApprovals from "./pages/pointApprovals";
 import Leaderboard from "./pages/leaderboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { useAuth } from "./components/protectedRoute";
 import { useState } from "react"
 import { AnimatePresence } from "framer-motion";
@@ -41,6 +43,9 @@ export default function App() {
       />
 
       <Route path="/register" element={<Registration />} />
+
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element = {<ResetPassword />}/>
 
       <Route
         path="/dashboard"
