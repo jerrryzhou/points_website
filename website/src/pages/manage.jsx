@@ -89,7 +89,7 @@ export default function Manage() {
     };
     // Add delete button, error handling for point inputs, roles, add error checking for blank names in registration
     return (
-        <div className="min-h-screen bg-green-600 text-gray-800">
+        <div className="min-h-screen bg-green-700 text-gray-800">
             <AdminNavbar/>
             {/* <div className="bg-white rounded-xl shadow p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                 <input

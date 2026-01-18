@@ -17,7 +17,7 @@ export default function Leaderboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-green-600 text-gray-800">
+    <div className="min-h-screen bg-green-700 text-gray-800">
       <AppNavbar />
 
       <div className="max-w-4xl mx-auto mt-10 px-4">

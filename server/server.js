@@ -115,13 +115,13 @@ app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res)
 // Register api, creates new member in database
 app.post('/api/register', async (req, res) => { 
     const currentDate = new Date();
-    const { first_name, last_name, email, password} = req.body;
+    const { first_name, last_name, email, password, pledge_class} = req.body;
     try {
         const result = await pool.query(
-            `INSERT INTO members (full_name, email, password, position, points, created_at, approved)
-            VALUES ($1, $2, $3, 'member', 0, $4, FALSE)
-            RETURNING full_name, email, position, points, created_at, approved`,
-            [first_name + " " + last_name, email, password, currentDate]
+            `INSERT INTO members (full_name, email, password, position, points, created_at, approved, pledge_class)
+            VALUES ($1, $2, $3, 'member', 0, $4, FALSE, $5)
+            RETURNING full_name, email, position, points, created_at, approved, pledge_class`,
+            [first_name + " " + last_name, email, password, currentDate, pledge_class]
         );
 
         return res.status(200).json({

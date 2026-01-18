@@ -37,7 +37,7 @@ export default function AccountApprovals() {
   };
 
     return (
-        <div className="min-h-screen bg-green-600 text-gray-800">
+        <div className="min-h-screen bg-green-700 text-gray-800">
             <AdminNavbar/>
             <h1 className="text-3xl font-bold text-white mt-3 ml-3 mb-6">Pending Approvals</h1>
 
