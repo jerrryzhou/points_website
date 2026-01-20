@@ -64,9 +64,13 @@ export default function AdminNavbar({ setToken, setUser }) {
           Manage
         </Link>
         
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
-          Point History
-        </a>
+        <Link
+          to="/admin/points-history"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
+        
+          Points History
+        </Link>
       </div>
 
       {/* Profile Icon */}

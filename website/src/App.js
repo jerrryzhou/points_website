@@ -9,6 +9,7 @@ import PointApprovals from "./pages/pointApprovals";
 import Leaderboard from "./pages/leaderboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PointsHistory from "./pages/pointsHistory";
 import { useAuth } from "./components/protectedRoute";
 import { useState } from "react"
 import { AnimatePresence } from "framer-motion";
@@ -46,6 +47,11 @@ export default function App() {
 
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element = {<ResetPassword />}/>
+
+      <Route 
+        path="/admin/points-history"
+        element={ token && user?.position === "admin" ? <PointsHistory /> : <Navigate to="/login" replace/>}
+      />
 
       <Route
         path="/dashboard"

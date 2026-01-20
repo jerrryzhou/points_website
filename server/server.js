@@ -14,6 +14,9 @@ const ALLOWED_POSITIONS = new Set(["member", "position-holder", "admin"]);
 dotenv.config();
 // console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
 
+
+// Deleting users could cause problems because of the points table
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -187,7 +190,7 @@ app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) 
   }
 });
 
-// app.delete("/api/members/:id", async (req, res) => {
+// Delete needs to delete point transactions as well?
 app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -377,6 +380,7 @@ app.post("/api/point-requests", authenticateToken, async (req, res) => {
   }
 });
 
+
 app.get("/api/point-requests", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const status = (req.query.status || "pending").toLowerCase();
@@ -405,6 +409,62 @@ app.get("/api/point-requests", authenticateToken, requireAdmin, async (req, res)
   }
 });
 
+// app.get("/api/point-requests", authenticateToken, requireAdmin, async (req, res) => {
+//   try {
+//     const status = (req.query.status || "pending").toLowerCase();
+//     if (!["pending", "approved", "denied"].includes(status)) {
+//       return res.status(400).json({ error: "Invalid status" });
+//     }
+
+//     // Pagination params
+//     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+//     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 25, 1), 100); // cap at 100
+//     const offset = (page - 1) * limit;
+
+//     // Total count (for pagination UI)
+//     const countResult = await pool.query(
+//       `SELECT COUNT(*)::bigint AS total
+//        FROM point_requests pr
+//        WHERE pr.status = $1`,
+//       [status]
+//     );
+//     const total = Number(countResult.rows[0].total);
+//     const totalPages = Math.max(Math.ceil(total / limit), 1);
+
+//     // Page of results
+//     const result = await pool.query(
+//       `
+//       SELECT pr.*,
+//              g.full_name AS giver_name,
+//              r.full_name AS recipient_name
+//       FROM point_requests pr
+//       JOIN members g ON g.id = pr.giver_user_id
+//       JOIN members r ON r.id = pr.recipient_user_id
+//       WHERE pr.status = $1
+//       ORDER BY pr.created_at DESC
+//       LIMIT $2 OFFSET $3
+//       `,
+//       [status, limit, offset]
+//     );
+
+//     res.json({
+//       data: result.rows,
+//       pagination: {
+//         page,
+//         limit,
+//         total,
+//         totalPages,
+//         hasNext: page < totalPages,
+//         hasPrev: page > 1,
+//       },
+//     });
+//   } catch (err) {
+//     console.error("Error fetching point requests:", err);
+//     res.status(500).json({ error: "Failed to load point requests" });
+//   }
+// });
+
+// Approve point request
 app.post("/api/point-requests/:id/approve", authenticateToken, requireAdmin, async (req, res) => {
   const requestId = Number(req.params.id);
   const adminId = req.user.id;
@@ -462,6 +522,7 @@ app.post("/api/point-requests/:id/approve", authenticateToken, requireAdmin, asy
   }
 });
 
+// Deny point request
 app.post("/api/point-requests/:id/deny", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const requestId = Number(req.params.id);
@@ -494,6 +555,7 @@ app.post("/api/point-requests/:id/deny", authenticateToken, requireAdmin, async 
   }
 });
 
+// User's point history
 app.get("/api/me/point-history", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -522,6 +584,7 @@ app.get("/api/me/point-history", authenticateToken, async (req, res) => {
   }
 });
 
+// get all point requests
 app.get("/api/me/point-requests", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -551,6 +614,53 @@ app.get("/api/me/point-requests", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Failed to load point requests" });
   }
 });
+
+// // Get approved transactions
+// app.get(
+//   "/api/admin/point-transactions",
+//   authenticateToken,
+//   requireAdmin,
+//   async (req, res) => {
+//     try {
+//       const limit = Math.min(Number(req.query.limit) || 25, 200);
+//       const offset = Math.max(Number(req.query.offset) || 0, 0);
+
+//       const countResult = await pool.query(
+//         `SELECT COUNT(*)::int AS total
+//          FROM point_transactions`
+//       );
+//       const total = countResult.rows[0]?.total ?? 0;
+
+//       const result = await pool.query(
+//         `
+//         SELECT
+//           pt.id,
+//           pt.points,
+//           pt.reason,
+//           pt.created_at,
+//           pt.request_id,
+
+//           giver.full_name     AS giver_name,
+//           recipient.full_name AS recipient_name,
+
+//           pt.source_user_id   AS giver_user_id,
+//           pt.user_id          AS recipient_user_id
+//         FROM point_transactions pt
+//         JOIN members giver     ON giver.id = pt.source_user_id
+//         JOIN members recipient ON recipient.id = pt.user_id
+//         ORDER BY pt.created_at DESC
+//         LIMIT $1 OFFSET $2
+//         `,
+//         [limit, offset]
+//       );
+
+//       res.json({ total, limit, offset, rows: result.rows });
+//     } catch (err) {
+//       console.error("Admin transactions error:", err);
+//       res.status(500).json({ error: "Failed to load point transactions" });
+//     }
+//   }
+// );
 
 app.get("/api/leaderboard", authenticateToken, async (req, res) => {
   try {
