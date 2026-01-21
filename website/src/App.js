@@ -11,7 +11,6 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PointsHistory from "./pages/pointsHistory";
 import { useAuth } from "./components/protectedRoute";
-import { useState } from "react"
 import { AnimatePresence } from "framer-motion";
 
 export default function App() {

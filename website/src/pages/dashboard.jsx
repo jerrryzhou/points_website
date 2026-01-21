@@ -2,7 +2,6 @@ import Navbar from "../components/navbar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
 // import { isJwtExpired } from "../utils/jwt";
-import PageWrapper from "../components/pageWrapper";
 import { motion } from "framer-motion"
 
 export default function Dashboard() {

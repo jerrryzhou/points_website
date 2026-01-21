@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useAuth } from "./protectedRoute";
 
 
-export default function AdminNavbar({ setToken, setUser }) {
+export default function AdminNavbar() {
   const { logout } = useAuth();
 
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function AdminNavbar({ setToken, setUser }) {
       logout();
       navigate("/login", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, logout]);
 
   const handleLogout = () => {
     logout();

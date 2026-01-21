@@ -125,8 +125,8 @@ export default function Registration() {
       console.log("Status:", res.status, "OK:", res.ok);
       if (res.ok) {
         console.log("success");
-        toast.success("Account created! Tell your VPI to approve your account.")
         setMessage("Account created! Pending admin approval.");
+        toast.success(message)
         setFirstName("");
         setLastName("");
         setEmail("");

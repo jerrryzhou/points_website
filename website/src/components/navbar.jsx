@@ -3,7 +3,7 @@ import { isJwtExpired } from "../utils/jwt";
 import { useEffect } from "react";
 import { useAuth } from "./protectedRoute";
 
-export default function Navbar({ setToken, setUser }) {
+export default function Navbar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
    useEffect(() => {
@@ -11,12 +11,10 @@ export default function Navbar({ setToken, setUser }) {
     if (token && isJwtExpired(token)) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      setToken(null);
-      setUser(null);
       logout();
       navigate("/login", { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, logout]);
 
   const handleLogout = () => {
     logout();
@@ -44,9 +42,7 @@ export default function Navbar({ setToken, setUser }) {
         >
           Leaderboard
         </Link>
-        <a href="#" className="text-green-900 hover:text-green-700 font-medium">
-          Fines
-        </a>
+        
        
       </div>
 

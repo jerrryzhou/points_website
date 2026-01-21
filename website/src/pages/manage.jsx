@@ -30,7 +30,7 @@ export default function Manage() {
         });
 
     }, [users, searchTerm, positionFilter]);
-    const handleClose = () => setSelectedUser(null);
+    // const handleClose = () => setSelectedUser(null);
 
     const handleDelete = async (userToDelete) => {
         try {
