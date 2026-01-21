@@ -153,6 +153,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
   return res.status(200).json({message: "Password reset successful "})
 });
 
+// Update
 app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -689,6 +690,99 @@ app.get("/api/me", authenticateToken, async (req, res) => {
   );
   res.json(result.rows[0]);
 });
+
+// Points update on all three tables
+
+app.patch(
+  "/api/point-requests/:id/points",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    const requestId = Number(req.params.id);
+    const newPoints = Number(req.body?.points);
+
+    if (!Number.isInteger(requestId)) {
+      return res.status(400).json({ error: "Invalid request id" });
+    }
+    if (!Number.isFinite(newPoints) || newPoints < 0) {
+      return res.status(400).json({ error: "Invalid points" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      // Lock the request row
+      const pr = await client.query(
+        `
+        SELECT id, recipient_user_id, points, status
+        FROM point_requests
+        WHERE id = $1
+        FOR UPDATE
+        `,
+        [requestId]
+      );
+
+      if (pr.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      const { recipient_user_id, points: oldPoints, status } = pr.rows[0];
+
+      if (status !== "approved") {
+        await client.query("ROLLBACK");
+        return res
+          .status(409)
+          .json({ error: "Only approved requests can be edited" });
+      }
+
+      const delta = Number(newPoints) - Number(oldPoints);
+
+      // 1) Update request points
+      await client.query(
+        `UPDATE point_requests SET points = $1 WHERE id = $2`,
+        [newPoints, requestId]
+      );
+
+      // 2) Update transaction points (linked by request_id)
+      const tx = await client.query(
+        `UPDATE point_transactions SET points = $1 WHERE request_id = $2 RETURNING id`,
+        [newPoints, requestId]
+      );
+
+      if (tx.rowCount === 0) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          error:
+            "No matching point_transactions row for this request. Ledger is out of sync.",
+        });
+      }
+
+      // 3) Update recipient member balance by delta
+      await client.query(
+        `UPDATE members SET points = points + $1 WHERE id = $2`,
+        [delta, recipient_user_id]
+      );
+
+      await client.query("COMMIT");
+
+      res.json({
+        ok: true,
+        requestId,
+        oldPoints: Number(oldPoints),
+        newPoints,
+        delta,
+      });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error("Update approved request points error:", err);
+      res.status(500).json({ error: "Failed to update points" });
+    } finally {
+      client.release();
+    }
+  }
+);
 
 // Start server
 const PORT = process.env.PORT || 5000;
