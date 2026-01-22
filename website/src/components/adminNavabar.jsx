@@ -7,6 +7,7 @@ import { useAuth } from "./protectedRoute";
 export default function AdminNavbar() {
   const { logout } = useAuth();
 
+
   const navigate = useNavigate();
    useEffect(() => {
     const token = localStorage.getItem("token");

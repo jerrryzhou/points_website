@@ -10,6 +10,7 @@ import Leaderboard from "./pages/leaderboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PointsHistory from "./pages/pointsHistory";
+import PointsGiven from "./pages/pointsGiven";
 import { useAuth } from "./components/protectedRoute";
 import { AnimatePresence } from "framer-motion";
 
@@ -55,6 +56,11 @@ export default function App() {
       <Route
         path="/dashboard"
         element={token ? <Dashboard /> : <Navigate to="/login" replace />}
+      />
+
+      <Route
+        path="/points-given"
+        element={token ? <PointsGiven /> : <Navigate to="/login" replace />}
       />
 
       <Route

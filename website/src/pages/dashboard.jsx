@@ -5,11 +5,32 @@ import GivePointsModal from "../components/pointRequestModal";
 import { motion } from "framer-motion"
 
 export default function Dashboard() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  
   const [openGivePoints, setOpenGivePoints] = useState(false);
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
+  const [user, setUser] = useState(null);
   
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  fetch(`${process.env.REACT_APP_API_URL}/api/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Not authenticated");
+      return res.json();
+    })
+    .then(setUser)
+    .catch((err) => {
+      console.error(err);
+      // optional: force logout
+      localStorage.removeItem("token");
+    });
+},[]);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`, {
@@ -32,10 +53,10 @@ export default function Dashboard() {
 function StatusBadge({ status }) {
   const styles =
     status === "approved"
-      ? "bg-green-500/20 text-green-100 border-green-400/30"
+      ? "bg-green-500/20 text-green-800 border-green-400/30"
       : status === "pending"
-      ? "bg-yellow-500/20 text-yellow-100 border-yellow-400/30"
-      : "bg-red-500/20 text-red-100 border-red-400/30";
+      ? "bg-yellow-500/20 text-yellow-800 border-yellow-400/30"
+      : "bg-red-500/20 text-red-800 border-red-400/30";
 
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full border ${styles}`}>
@@ -69,7 +90,7 @@ function StatusBadge({ status }) {
                 </h2>
 
                 {user?.position === "position-holder" && (
-                  <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium">
+                  <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenGivePoints(true)}>
                     Give points
                   </button>
                 )}

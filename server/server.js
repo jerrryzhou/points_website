@@ -9,13 +9,19 @@ import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 import nodemailer from "nodemailer";
 
+
 const ALLOWED_POSITIONS = new Set(["member", "position-holder", "admin"]);
 
 dotenv.config();
 // console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
 
 
-// Deleting users could cause problems because of the points table
+// TO-DO
+// Change delete endpoint
+// Call /me endpoint on page load
+// add points given history for position holders
+// Password Reset
+// change viewport len
 
 const app = express();
 app.use(express.json());
@@ -605,6 +611,38 @@ app.get("/api/me/point-requests", authenticateToken, async (req, res) => {
       WHERE pr.recipient_user_id = $1
       ORDER BY pr.created_at DESC
       LIMIT 100
+      `,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load point requests" });
+  }
+});
+
+// returns users given point requests
+app.get("/api/me/point-given", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      `
+      SELECT
+        pr.id,
+        pr.points,
+        pr.reason,
+        pr.status,
+        pr.created_at,
+        pr.reviewed_at,
+        g.full_name AS giver_name,
+        r.full_name AS recipient_name
+      FROM point_requests pr
+      JOIN members g ON g.id = pr.giver_user_id
+      JOIN members r ON r.id = pr.recipient_user_id
+      WHERE pr.giver_user_id = $1
+      ORDER BY pr.created_at DESC
       `,
       [userId]
     );

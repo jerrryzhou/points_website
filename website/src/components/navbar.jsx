@@ -4,6 +4,10 @@ import { useEffect } from "react";
 import { useAuth } from "./protectedRoute";
 
 export default function Navbar() {
+
+  const user = JSON.parse(localStorage.getItem("user"))
+
+
   const { logout } = useAuth();
   const navigate = useNavigate();
    useEffect(() => {
@@ -42,7 +46,14 @@ export default function Navbar() {
         >
           Leaderboard
         </Link>
-        
+        {user?.position === "position-holder" && (
+                  <Link
+                    to="/points-given"
+                    className="text-green-900 hover:text-green-700 font-medium"
+                  >
+                    Points Given
+                  </Link>
+                )}
        
       </div>
 
