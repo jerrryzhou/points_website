@@ -79,7 +79,7 @@ export default function PointApprovals() {
     <div className="min-h-screen bg-green-700 text-gray-800">
       <AdminNavbar />
 
-      <h1 className="text-3xl font-bold text-white mt-3 ml-3 mb-6">
+      <h1 className="max-w-4xl mx-auto px-4 text-3xl font-bold text-white mt-10 mb-6">
         Pending Point Approvals
       </h1>
 

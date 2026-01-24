@@ -137,10 +137,11 @@ app.post("/api/auth/reset-password", async (req, res) => {
   );
 
   if (result.rowCount === 0) {
-    return res.status(400).json({error: "Invalid or expired token"});
+    return res.status(400).json({error: "Couldn't find user"});
   }
 
   const {id, password_reset_expires_at} = result.rows[0];
+  console.log(result)
   if (!password_reset_expires_at || new Date(password_reset_expires_at) < new Date()) {
     return res.status(400).json({error: "Invalid or expired token"});
   }
@@ -149,7 +150,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
 
   await pool.query(
     `UPDATE members
-    SET password = $1
+    SET password = $1,
     password_reset_token_hash = NULL,
     password_reset_expires_at = NULL
     WHERE id = $2`,

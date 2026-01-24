@@ -39,9 +39,9 @@ export default function AccountApprovals() {
     return (
         <div className="min-h-screen bg-green-700 text-gray-800">
             <AdminNavbar/>
-            <h1 className="text-3xl font-bold text-white mt-3 ml-3 mb-6">Pending Approvals</h1>
+            <h1 className="max-w-4xl mx-auto px-4 text-3xl font-bold text-white mt-10 mb-6">Pending Approvals</h1>
 
-    <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-lg">
+    <div className="max-w-4xl mx-auto bg-white/20 backdrop-blur-lg p-4 rounded-xl shadow-lg">
       {pendingUsers.length === 0 ? (
         <p className="text-white text-lg">No users pending approval.</p>
       ) : (
