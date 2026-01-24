@@ -90,7 +90,7 @@ export default function PointApprovals() {
           pendingRequests.map((req) => (
             <div
               key={req.id}
-              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white/10 p-4 rounded-lg mb-3 last:mb-0"
+              className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white/10 p-2 rounded-lg mb-3 last:mb-0"
             >
               <div>
                 <p className="text-xl font-semibold text-white">
