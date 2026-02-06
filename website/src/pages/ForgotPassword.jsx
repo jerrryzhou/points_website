@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,7 +15,7 @@ export default function ForgotPassword() {
       toast.error("Please enter your email");
       return;
     }
-
+    setLoading(true);
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/forgot-password`, {
         method: "POST",
@@ -34,7 +35,9 @@ export default function ForgotPassword() {
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong");
-    }
+    } finally {
+        setLoading(false);
+      }
   };
 
   return (
@@ -61,7 +64,7 @@ export default function ForgotPassword() {
 
           <button
             type="submit"
-            disabled={sent}
+            disabled={loading || sent}
             className="w-full py-3 mt-2 bg-yellow-50 hover:bg-yellow-100 disabled:opacity-60 text-gray-900 font-semibold rounded-xl transition duration-200"
           >
             {sent ? "Email sent" : "Send reset link"}
