@@ -200,8 +200,9 @@ app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) 
 
 // Delete needs to delete point transactions as well?
 app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
+  const id = Number(req.params.id);
   try {
-    const id = Number(req.params.id);
+    // const id = Number(req.params.id);
 
     if (!Number.isInteger(id)) {
       return res.status(400).json({ error: "Invalid id" });
@@ -220,8 +221,26 @@ app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res)
 
     res.sendStatus(204);
   } catch (err) {
-    console.error("Error deleting member:", err);
-    res.status(500).json({ error: "Server error" });
+    // 23503 = foreign_key_violation
+    if (err.code === "23503") {
+      // Fall back to SOFT delete
+      const soft = await pool.query(
+        `UPDATE members
+         SET deleted_at = NOW()
+         WHERE id = $1 AND deleted_at IS NULL
+         RETURNING id`,
+        [id]
+      );
+
+      if (soft.rowCount === 0) {
+        return res.status(404).json({ error: "Member not found" });
+      }
+
+      return res.json({ deleted: "soft", id: soft.rows[0].id });
+    }
+
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -309,7 +328,7 @@ app.get('/api/unapproved-users', async(req, res) => {
 app.get('/api/get-approved-users', async(req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, full_name, email, points, position FROM members WHERE approved = TRUE"
+      "SELECT id, full_name, email, points, position FROM members WHERE approved = TRUE AND deleted_at IS NULL"
     );
     res.json(result.rows);
   } catch(err) {
@@ -708,7 +727,7 @@ app.get("/api/leaderboard", authenticateToken, async (req, res) => {
       `
       SELECT id, full_name, points, position
       FROM members
-      WHERE approved = TRUE
+      WHERE approved = TRUE AND deleted_at IS NULL
       ORDER BY points DESC, full_name ASC
       `
     );
