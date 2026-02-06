@@ -78,9 +78,9 @@ function StatusBadge({ status }) {
     >
             <div className="flex flex-col items-center justify-center mt-20">
                 <h1 className="text-5xl font-bold text-white mb-6">
-                 {user ? user.full_name : "Brother name"}
+                 {user ? user.full_name : "\u00A0"}
                 </h1>
-                <h2 className="text-4xl font-bold text-white"> {user ? user.points : 0} Points </h2>
+                <h2 className="text-4xl font-bold text-white"> {user ? user.points : "\u00A0"} Points </h2>
             </div>
             <div className="max-w-4xl mx-auto mt-10 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
   {/* <h2 className="text-2xl font-semibold text-white mb-4">Points History</h2> */}
