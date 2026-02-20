@@ -164,7 +164,16 @@ app.post("/api/auth/reset-password", async (req, res) => {
 app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { position, points} = req.body;
+    const { position, points, full_name} = req.body;
+    if (full_name !== undefined) {
+      if (typeof full_name !== "string" || !full_name.trim()) {
+        return res.status(400).json({ error: "Invalid full_name" });
+      }
+      if (full_name.trim().length > 200) {
+        return res.status(400).json({ error: "full_name is too long" });
+      }
+    }
+
     if (!Number.isInteger(id)) {
       return res.status(400).json({ error: "Invalid id" });
     }
@@ -181,10 +190,11 @@ app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) 
     const result = await pool.query(
       `UPDATE members
       SET position = COALESCE($1, position),
-      points = COALESCE($2, points)
-      WHERE id = $3
+      full_name = COALESCE($2, full_name),
+      points = COALESCE($3, points)
+      WHERE id = $4
       RETURNING id, full_name, email, points, position, approved`,
-      [position ?? null, points ?? null, id]
+      [position ?? null, full_name, points ?? null, id]
     );
 
     if (result.rows.length === 0) {
@@ -387,7 +397,7 @@ app.post("/api/point-requests", authenticateToken, async (req, res) => {
       `SELECT id, approved FROM members WHERE id = ANY($1::bigint[])`,
       [[giverId, recipientUserId]]
     );
-    if (check.rows.length !== 2 || check.rows.some(r => !r.approved)) {
+    if (check.rows.length !== 1  || check.rows.some(r => !r.approved)) {
       return res.status(400).json({ error: "Both giver and recipient must be approved members" });
     }
 

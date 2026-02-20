@@ -10,9 +10,11 @@ export default function EditMemberModal({
 }) {
   const [position, setPosition] = useState("member");
   const [saving, setSaving] = useState(false);
+  const [fullName, setFullName] = useState("");
 
   useEffect(() => {
     if (user) {
+      setFullName(user.full_name ?? "");
       setPosition(user.position || "member");
     }
   }, [user]);
@@ -21,10 +23,16 @@ export default function EditMemberModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!fullName.trim()) {
+      alert("Name is required");
+      return;
+    }
+
     setSaving(true);
     try {
       // Only send position now
-      await onSave({ position });
+      await onSave({full_name: fullName.trim(), position });
       onClose();
     } finally {
       setSaving(false);
@@ -70,9 +78,15 @@ export default function EditMemberModal({
                   <label className="block text-sm font-medium text-gray-700">
                     Name
                   </label>
-                  <div className="mt-1 rounded-lg border bg-gray-50 px-3 py-2 text-gray-800">
+                  {/* <div className="mt-1 rounded-lg border bg-gray-50 px-3 py-2 text-gray-800">
                     {user.full_name}
-                  </div>
+                  </div> */}
+                  <input
+                    type="text"
+                    value={fullName ?? ""}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="mt-1 w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
 
                 <div>

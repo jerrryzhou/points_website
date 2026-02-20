@@ -147,6 +147,6 @@ function StatusBadge({ status }) {
             />
             </motion.div>
         </div>
-        
+
     );
 }
