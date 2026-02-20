@@ -13,7 +13,7 @@ export default function GivePointsModal({ open, onClose, members, giverId }) {
     return (members || [])
       // .filter((m) => String(m.id) !== String(giverId))
       .map((m) => ({ value: String(m.id), label: m.full_name }));
-  }, [members, giverId]);
+  }, [members]);
 
   const selectedIds = useMemo(
     () => new Set(rows.map((r) => String(r.recipientId)).filter(Boolean)),
