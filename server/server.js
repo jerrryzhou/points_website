@@ -397,7 +397,8 @@ app.post("/api/point-requests", authenticateToken, async (req, res) => {
       `SELECT id, approved FROM members WHERE id = ANY($1::bigint[])`,
       [[giverId, recipientUserId]]
     );
-    if (check.rows.length !== 1  || check.rows.some(r => !r.approved)) {
+    const ids = Array.from(new Set([String(giverId), String(recipientUserId)])).map(Number);
+    if (check.rows.length !== ids.length  || check.rows.some(r => !r.approved)) {
       return res.status(400).json({ error: "Both giver and recipient must be approved members" });
     }
 
