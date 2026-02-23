@@ -27,11 +27,29 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// const pool = new pg.Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: {
+//     rejectUnauthorized: false,
+//   },
+// });
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: { rejectUnauthorized: false },
+  max: 10,
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+  keepAlive: true,
+});
+
+// Important: prevent process crashes on pool errors
+pool.on("error", (err) => {
+  console.error("Unexpected PG pool error", err);
+});
+
+// timeout per connection
+pool.on("connect", (client) => {
+  client.query("SET statement_timeout = 15000"); // 15s
 });
 
 const forgotLimiter = rateLimit({
@@ -117,7 +135,7 @@ app.post("/api/auth/forgot-password", forgotLimiter, async (req, res) => {
   );
 
   // send email
-  const resetLink = `${process.env.FRONTED_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
   await sendResetEmail(email, resetLink)
   return res.status(200).json(generic)
 })
@@ -753,11 +771,16 @@ app.get("/api/leaderboard", authenticateToken, async (req, res) => {
 });
 
 app.get("/api/me", authenticateToken, async (req, res) => {
-  const result = await pool.query(
-    "SELECT id, full_name, email, points, position FROM members WHERE id = $1",
-    [req.user.id]
-  );
-  res.json(result.rows[0]);
+  try {
+    const result = await pool.query(
+      "SELECT id, full_name, email, points, position FROM members WHERE id = $1",
+      [req.user.id]
+    );
+    res.json(result.rows[0] ?? null);
+  } catch (err) {
+    console.error("ME error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 // Points update on all three tables
