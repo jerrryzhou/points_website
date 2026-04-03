@@ -8,6 +8,7 @@ import crypto from "crypto";
 // import { hashToken, hashPassword } from "./security.js";
 import rateLimit from "express-rate-limit";
 import nodemailer from "nodemailer";
+import { createClient } from 'redis';
 
 
 const ALLOWED_POSITIONS = new Set(["member", "position-holder", "admin"]);
@@ -44,13 +45,34 @@ const pool = new pg.Pool({
 
 // Important: prevent process crashes on pool errors
 pool.on("error", (err) => {
-  console.error("Unexpected PG pool error", err);
+  console.error("PG pool error (non-fatal):", {
+    message: err.message,
+    code: err.code,
+    errno: err.errno,
+    syscall: err.syscall,
+    address: err.address,
+    port: err.port,
+  });
 });
 
 // timeout per connection
 pool.on("connect", (client) => {
   client.query("SET statement_timeout = 15000"); // 15s
 });
+
+// redis client
+const redisClient = createClient({
+  username: 'default',
+  password: process.env.REDIS_PASS,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+  },
+});
+
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
+
+await redisClient.connect();
 
 const forgotLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -218,6 +240,8 @@ app.patch("/api/members/:id", authenticateToken, requireAdmin, async (req, res) 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Member not found"});
     }
+    await redisClient.del("approved_users:v1");
+    await redisClient.del("leaderboard:v1");
     res.json(result.rows[0]);
 
   } catch (err) {
@@ -246,7 +270,8 @@ app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res)
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Member not found" });
     }
-
+    await redisClient.del("approved_users:v1");
+    await redisClient.del("leaderboard:v1");
     res.sendStatus(204);
   } catch (err) {
     // 23503 = foreign_key_violation
@@ -263,7 +288,8 @@ app.delete("/api/members/:id", authenticateToken, requireAdmin, async (req, res)
       if (soft.rowCount === 0) {
         return res.status(404).json({ error: "Member not found" });
       }
-
+      await redisClient.del("approved_users:v1");
+      await redisClient.del("leaderboard:v1");
       return res.json({ deleted: "soft", id: soft.rows[0].id });
     }
 
@@ -354,10 +380,18 @@ app.get('/api/unapproved-users', async(req, res) => {
 });
 
 app.get('/api/get-approved-users', async(req, res) => {
+  const cacheKey = "approved_users:v1"
+  const ttlSeconds = 3600
   try {
+    const cached = await redisClient.get(cacheKey)
+    if (cached) {
+      return res.json(JSON.parse(cached));
+    }
     const result = await pool.query(
       "SELECT id, full_name, email, points, position FROM members WHERE approved = TRUE AND deleted_at IS NULL"
     );
+    // store in redis
+    await redisClient.set(cacheKey, JSON.stringify(result.rows), { EX: ttlSeconds });
     res.json(result.rows);
   } catch(err) {
     console.error("Error fetching approved users:", err);
@@ -369,6 +403,8 @@ app.post("/api/approve-user", async (req, res) => {
   const { id } = req.body;
   try {
     await pool.query("UPDATE members SET approved = TRUE WHERE id = $1", [id]);
+    await redisClient.del("approved_users:v1");
+    await redisClient.del("leaderboard:v1");
     res.json({ message: "User approved" });
   } catch (err) {
     console.error(err);
@@ -436,12 +472,18 @@ app.post("/api/point-requests", authenticateToken, async (req, res) => {
   }
 });
 
-
+// get all approved point requests
 app.get("/api/point-requests", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const status = (req.query.status || "pending").toLowerCase();
+    const cacheKey = `point_requests:v1:status=${status}`;
+    const ttlSeconds = 3600;
     if (!["pending", "approved", "denied"].includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
+    }
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      return res.json(JSON.parse(cached)); // returns array
     }
 
     const result = await pool.query(
@@ -457,7 +499,7 @@ app.get("/api/point-requests", authenticateToken, requireAdmin, async (req, res)
       `,
       [status]
     );
-
+    await redisClient.set(cacheKey, JSON.stringify(result.rows), { EX: ttlSeconds });
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching point requests:", err);
@@ -563,6 +605,8 @@ app.post("/api/point-requests/:id/approve", authenticateToken, requireAdmin, asy
     }
 
     res.json({ ok: true, updatedMember: result.rows[0] });
+    await redisClient.del("point_requests:v1:status=approved");
+    await redisClient.del("leaderboard:v1");
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Approve error:", err);
@@ -751,7 +795,13 @@ app.get("/api/me/point-given", authenticateToken, async (req, res) => {
 // );
 
 app.get("/api/leaderboard", authenticateToken, async (req, res) => {
+  const cacheKey = "leaderboard:v1";
+  const ttlSeconds = 1800;
   try {
+    const cached = await redisClient.get(cacheKey);
+    if (cached) {
+      return res.json(JSON.parse(cached)); // array
+    }
     const result = await pool.query(
       `
       SELECT id, full_name, points, position
@@ -761,14 +811,156 @@ app.get("/api/leaderboard", authenticateToken, async (req, res) => {
       `
     );
 
-    // small cache to reduce repeated hits
-    res.set("Cache-Control", "public, max-age=30");
+    await redisClient.set(cacheKey, JSON.stringify(result.rows), { EX: ttlSeconds });
     res.json(result.rows);
   } catch (err) {
     console.error("Leaderboard error:", err);
     res.status(500).json({ error: "Failed to load leaderboard" });
   }
 });
+
+// Add calender event
+function isValidDateString(s) {
+  if (typeof s !== "string") return false;
+  const d = new Date(s);
+  return Number.isFinite(d.getTime());
+}
+
+function normalizeAllDayRange(start, end) {
+  const s = new Date(start);
+  const e = new Date(end);
+
+  s.setHours(0, 0, 0, 0);
+  e.setHours(23, 59, 59, 999);
+
+  return { s, e };
+}
+
+app.post("/api/events", authenticateToken, async (req, res) => {
+  try {
+    const {
+      title,
+      description = null,
+      start_datetime,
+      end_datetime,
+      all_day = false,
+      location = null,
+      color = null,
+    } = req.body || {};
+
+    if (!title || typeof title !== "string" || title.trim().length === 0) {
+      return res.status(400).json({ error: "title is required" });
+    }
+    if (!start_datetime || !end_datetime) {
+      return res
+        .status(400)
+        .json({ error: "start_datetime and end_datetime are required" });
+    }
+    if (!isValidDateString(start_datetime) || !isValidDateString(end_datetime)) {
+      return res
+        .status(400)
+        .json({ error: "start_datetime/end_datetime must be valid ISO date strings" });
+    }
+
+    let start = new Date(start_datetime);
+    let end = new Date(end_datetime);
+
+    if (end <= start) {
+      return res.status(400).json({ error: "end_datetime must be after start_datetime" });
+    }
+
+    // If all_day, normalize to the full-day boundary (makes month view much nicer)
+    if (all_day) {
+      const normalized = normalizeAllDayRange(start, end);
+      start = normalized.s;
+      end = normalized.e;
+    }
+
+    // Optional: validate color (very light check)
+    if (color && (typeof color !== "string" || color.length > 20)) {
+      return res.status(400).json({ error: "color must be a short string like #3b82f6" });
+    }
+
+    const result = await pool.query(
+      `
+      INSERT INTO events
+        (title, description, start_datetime, end_datetime, all_day, location, color, created_by)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING
+        id, title, description, start_datetime, end_datetime, all_day, location, color, created_at, updated_at, created_by
+      `,
+      [
+        title.trim(),
+        description,
+        start.toISOString(),
+        end.toISOString(),
+        !!all_day,
+        location,
+        color,
+        req.user.id
+      ]
+    );
+
+    return res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("POST /api/events error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/api/events", authenticateToken, async (req, res) => {
+  try {
+    const { start, end } = req.query;
+
+    if (!start || !end || !isValidDateString(String(start)) || !isValidDateString(String(end))) {
+      return res.status(400).json({ error: "start and end query params (ISO) are required" });
+    }
+
+    const startDt = new Date(String(start));
+    const endDt = new Date(String(end));
+
+    // overlap condition: event starts before range ends AND event ends after range starts
+    const result = await pool.query(
+      `
+      SELECT
+        id, title, description, start_datetime, end_datetime, all_day, location, color, created_at, updated_at, created_by
+      FROM events
+      WHERE start_datetime <= $2
+        AND end_datetime >= $1
+      ORDER BY start_datetime ASC
+      `,
+      [startDt.toISOString(), endDt.toISOString()]
+    );
+
+    return res.json(result.rows);
+  } catch (err) {
+    console.error("GET /api/events error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// OPTIONAL: DELETE EVENT (admin only)
+app.delete("/api/events/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `DELETE FROM events WHERE id = $1 AND created_by = $2 RETURNING id`,
+      [id, req.user.id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    return res.json({ ok: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error("DELETE /api/events/:id error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 app.get("/api/me", authenticateToken, async (req, res) => {
   try {
@@ -866,6 +1058,8 @@ app.patch(
         newPoints,
         delta,
       });
+      await redisClient.del("point_requests:v1:status=approved");
+      await redisClient.del("leaderboard:v1");
     } catch (err) {
       await client.query("ROLLBACK");
       console.error("Update approved request points error:", err);
@@ -875,6 +1069,7 @@ app.patch(
     }
   }
 );
+
 
 // Start server
 const PORT = process.env.PORT || 5000;

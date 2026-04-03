@@ -13,6 +13,7 @@ import PointsHistory from "./pages/pointsHistory";
 import PointsGiven from "./pages/pointsGiven";
 import { useAuth } from "./components/protectedRoute";
 import { AnimatePresence } from "framer-motion";
+import CalendarPage from "./pages/calender";
 
 export default function App() {
   const location = useLocation();
@@ -56,6 +57,11 @@ export default function App() {
       <Route
         path="/dashboard"
         element={token ? <Dashboard /> : <Navigate to="/login" replace />}
+      />
+
+      <Route
+        path="/calender"
+        element={token ? <CalendarPage /> : <Navigate to="/login" replace />}
       />
 
       <Route
