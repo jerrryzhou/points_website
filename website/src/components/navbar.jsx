@@ -46,6 +46,12 @@ export default function Navbar() {
         >
           Leaderboard
         </Link>
+        <Link
+          to="/calender"
+          className="text-green-900 hover:text-green-700 font-medium"
+        >
+          Calender
+        </Link>
         {user?.position === "position-holder" && (
                   <Link
                     to="/points-given"
