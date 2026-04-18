@@ -60,7 +60,7 @@ export default function App() {
       />
 
       <Route
-        path="/calender"
+        path="/calendar"
         element={token ? <CalendarPage /> : <Navigate to="/login" replace />}
       />
 

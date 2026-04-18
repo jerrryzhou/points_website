@@ -132,7 +132,7 @@ export default function PointsHistory() {
         ) : (
           <ApprovedPointRequestsTable
             requests={tableRequests}
-            pageSize={10}
+            pageSize={30}
             onUpdatePoints={onUpdatePoints}
           />
         )}

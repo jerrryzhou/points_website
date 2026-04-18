@@ -1,4 +1,5 @@
 import AdminNavbar from "../components/adminNavabar";
+import Navbar from "../components/navbar";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import AddEventModal from "../components/AddEventModal";
@@ -126,16 +127,15 @@ function EventPill({ event, onClick }) {
   const bg = event.color ? `${event.color}22` : "rgba(255,255,255,0.10)";
 
   return (
-    <button
-      onClick={() => onClick?.(event)}
-      className="w-full text-left rounded-lg px-2 py-1.5 border hover:bg-white/15 transition"
+    <div
+      onClick={(e) => { e.stopPropagation(); onClick?.(event); }}
+      className="w-full text-left rounded-lg px-2 py-1.5 border hover:bg-white/15 transition cursor-pointer"
       style={{ borderColor: border, backgroundColor: bg }}
       title={event.title}
-      type="button"
     >
       <div className="text-xs text-gray-200/90">{label}</div>
       <div className="text-sm text-white font-medium truncate">{event.title}</div>
-    </button>
+    </div>
   );
 }
 
@@ -188,6 +188,7 @@ export default function AdminCalendarPage() {
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
+  const isAdmin = user?.position === "admin";
   const userId = user?.id;
 
  const canDeleteSelected =
@@ -297,7 +298,7 @@ export default function AdminCalendarPage() {
 
   return (
     <div className="min-h-screen bg-green-700 text-gray-800">
-      <AdminNavbar />
+      {isAdmin ? <AdminNavbar /> : <Navbar />}
 
       <motion.div
         initial={{ opacity: 0, y: 12 }}

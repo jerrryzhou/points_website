@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
+  const [events, setEvents] = useState([]);
   
   useEffect(() => {
   const token = localStorage.getItem("token");
@@ -50,6 +51,19 @@ export default function Dashboard() {
     .catch(console.error);
 }, []);
 
+  useEffect(() => {
+    const now = new Date();
+    const later = new Date();
+    later.setDate(later.getDate() + 30);
+    fetch(
+      `${process.env.REACT_APP_API_URL}/api/events?start=${encodeURIComponent(now.toISOString())}&end=${encodeURIComponent(later.toISOString())}`,
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    )
+      .then((r) => r.json())
+      .then((data) => setEvents(Array.isArray(data) ? data : []))
+      .catch(console.error);
+  }, []);
+
 function StatusBadge({ status }) {
   const styles =
     status === "approved"
@@ -82,49 +96,71 @@ function StatusBadge({ status }) {
                 </h1>
                 <h2 className="text-4xl font-bold text-white"> {user ? user.points : "\u00A0"} Points </h2>
             </div>
-            <div className="max-w-4xl mx-auto mt-10 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
-  {/* <h2 className="text-2xl font-semibold text-white mb-4">Points History</h2> */}
-            <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-semibold text-white">
-                  Points History
-                </h2>
-
-                {user?.position === "position-holder" && (
-                  <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenGivePoints(true)}>
-                    Give points
-                  </button>
-                )}
+            <div className="max-w-6xl mx-auto mt-10 flex flex-col lg:flex-row gap-6 items-start">
+              {/* Points History */}
+              <div className="flex-1 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-semibold text-white">Points History</h2>
+                  {user?.position === "position-holder" && (
+                    <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenGivePoints(true)}>
+                      Give points
+                    </button>
+                  )}
+                </div>
+                <ul className="divide-y divide-gray-700">
+                  {history.map((h) => (
+                    <li key={h.id} className="py-3 flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-200 font-medium truncate">{h.reason}</span>
+                          <StatusBadge status={h.status} />
+                        </div>
+                        <div className="text-gray-300 text-sm">From: {h.giver_name}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-gray-200 font-semibold">
+                          {h.points > 0 ? `+${h.points}` : h.points}
+                        </div>
+                        <div className="text-gray-200 text-sm">
+                          {new Date(h.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                  {history.length === 0 && (
+                    <li className="py-3 text-gray-200 text-sm">No point history yet.</li>
+                  )}
+                </ul>
               </div>
-              <ul className="divide-y divide-gray-700">
-                {history.map((h) => (
-                  <li key={h.id} className="py-3 flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-200 font-medium truncate">{h.reason}</span>
 
-                        <StatusBadge status={h.status} />
-                      </div>
-
-                      <div className="text-gray-300 text-sm">
-                        From: {h.giver_name}
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-gray-200 font-semibold">
-                        {h.points > 0 ? `+${h.points}` : h.points}
-                      </div>
-                      <div className="text-gray-200 text-sm">
-                        {new Date(h.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-
-                {history.length === 0 && (
-                  <li className="py-3 text-gray-200 text-sm">No point history yet.</li>
-                )}
-              </ul>
+              {/* Upcoming Events */}
+              <div className="w-full lg:w-80 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg shrink-0">
+                <h2 className="text-2xl font-semibold text-white mb-4">Upcoming Events</h2>
+                <ul className="space-y-3">
+                  {events.map((ev) => {
+                    const start = new Date(ev.start_datetime);
+                    return (
+                      <li key={ev.id} className="flex gap-3 items-start">
+                        <div
+                          className="mt-1 w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: ev.color || "rgba(255,255,255,0.5)" }}
+                        />
+                        <div className="min-w-0">
+                          <div className="text-white font-medium truncate">{ev.title}</div>
+                          <div className="text-gray-300 text-sm">
+                            {ev.all_day
+                              ? start.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                              : start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  {events.length === 0 && (
+                    <li className="text-gray-200 text-sm">No upcoming events.</li>
+                  )}
+                </ul>
+              </div>
             </div>
             <GivePointsModal
               open={openGivePoints}

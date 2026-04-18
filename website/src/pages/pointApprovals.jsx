@@ -95,7 +95,7 @@ export default function PointApprovals() {
               <div>
                 <p className="text-xl font-semibold text-white">
                   {req.recipient_name}
-                  <span className="text-gray-200 font-normal"> (+{req.points})</span>
+                  <span className="text-gray-200 font-normal"> ({req.points > 0 ? "+" : ""}{req.points})</span>
                 </p>
 
                 <p className="text-gray-200">

@@ -1,15 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { isJwtExpired } from "../utils/jwt";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "./protectedRoute";
 
-
 export default function AdminNavbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const { logout } = useAuth();
-
-
   const navigate = useNavigate();
-   useEffect(() => {
+
+  useEffect(() => {
     const token = localStorage.getItem("token");
     if (token && isJwtExpired(token)) {
       localStorage.removeItem("token");
@@ -25,70 +24,54 @@ export default function AdminNavbar() {
   };
 
   return (
-    <nav className="bg-emerald-50 border-b border-emerald-100 px-6 py-3 flex items-center justify-between">
-      {/* Logo */}
-      <div className="flex items-center space-x-2">
+    <nav className="bg-emerald-50 border-b border-emerald-100 px-6 py-3">
+      <div className="flex items-center justify-between">
+        {/* Logo */}
         <span className="text-green-800 font-semibold text-2xl">ΔΣΦ</span>
+
+        {/* Desktop links */}
+        <div className="hidden md:flex space-x-6">
+          <Link to="/admin/dashboard" className="text-green-900 hover:text-green-700 font-medium">Dashboard</Link>
+          <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium">Leaderboard</Link>
+          <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium">Calendar</Link>
+          <Link to="/admin/approvals" className="text-green-900 hover:text-green-700 font-medium">Account Approvals</Link>
+          <Link to="/admin/point-approvals" className="text-green-900 hover:text-green-700 font-medium">Point Approvals</Link>
+          <Link to="/admin/manage" className="text-green-900 hover:text-green-700 font-medium">Manage</Link>
+          <Link to="/admin/points-history" className="text-green-900 hover:text-green-700 font-medium">Points History</Link>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleLogout}
+            className="rounded-lg bg-red-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-600 transition"
+          >
+            Logout
+          </button>
+          {/* Hamburger */}
+          <button
+            className="md:hidden flex flex-col gap-1.5 p-1"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
+          >
+            <span className="block w-6 h-0.5 bg-green-800" />
+            <span className="block w-6 h-0.5 bg-green-800" />
+            <span className="block w-6 h-0.5 bg-green-800" />
+          </button>
+        </div>
       </div>
 
-      {/* Links */}
-      <div className="hidden md:flex space-x-6">
-        <Link
-          to="/admin/dashboard"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-          Dashboard
-        </Link>
-        <Link
-          to="/leaderboard"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-          Leaderboard
-        </Link>
-        <Link
-          to="/calender"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-          Calender
-        </Link>
-        <Link
-          to="/admin/approvals"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-          Account Approvals
-        </Link>
-        <Link
-          to="/admin/point-approvals"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-          Point Approvals
-        </Link>
-        <Link
-          to="/admin/manage"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-        
-          Manage
-        </Link>
-        
-        <Link
-          to="/admin/points-history"
-          className="text-green-900 hover:text-green-700 font-medium"
-        >
-        
-          Points History
-        </Link>
-      </div>
-
-      {/* Profile Icon */}
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={handleLogout}
-          className="rounded-lg bg-red-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-red-600 transition"
-        >
-          Logout
-        </button>
-      </div>
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden flex flex-col gap-3 pt-3 pb-1">
+          <Link to="/admin/dashboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+          <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
+          <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Calendar</Link>
+          <Link to="/admin/approvals" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Account Approvals</Link>
+          <Link to="/admin/point-approvals" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Point Approvals</Link>
+          <Link to="/admin/manage" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Manage</Link>
+          <Link to="/admin/points-history" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Points History</Link>
+        </div>
+      )}
     </nav>
   );
 }

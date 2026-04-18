@@ -61,7 +61,7 @@ export default function GivePointsModal({ open, onClose, members, giverId }) {
 
     for (const r of cleaned) {
       if (!Number.isFinite(r.points)) return alert("Points must be a number");
-      if (r.points <= 0) return alert("Points must be greater than 0");
+      //if (r.points <= 0) return alert("Points must be greater than 0");
     }
 
     try {
@@ -195,7 +195,6 @@ export default function GivePointsModal({ open, onClose, members, giverId }) {
                           }
                           type="number"
                           step="1"
-                          min="1"
                           className="w-full rounded-lg border px-3 py-2"
                           placeholder="e.g. 5"
                         />
