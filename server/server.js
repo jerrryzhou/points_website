@@ -11,7 +11,7 @@ import nodemailer from "nodemailer";
 import { createClient } from 'redis';
 
 
-const ALLOWED_POSITIONS = new Set(["member", "position-holder", "admin"]);
+const ALLOWED_POSITIONS = new Set(["member", "position-holder", "chief-justice", "admin"]);
 
 dotenv.config();
 // console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
@@ -110,6 +110,13 @@ function authenticateToken(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (req.user?.position !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  next();
+}
+
+function requireAdminOrChiefJustice(req, res, next) {
+  if (req.user?.position !== "admin" && req.user?.position !== "chief-justice") {
     return res.status(403).json({ error: "Forbidden" });
   }
   next();
@@ -465,6 +472,8 @@ app.post("/api/point-requests", authenticateToken, async (req, res) => {
       [recipientUserId, giverId, points, reason.trim()]
     );
 
+    await redisClient.del("point_requests:v1:status=pending");
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("Error creating point request:", err);
@@ -605,6 +614,7 @@ app.post("/api/point-requests/:id/approve", authenticateToken, requireAdmin, asy
     }
 
     res.json({ ok: true, updatedMember: result.rows[0] });
+    await redisClient.del("point_requests:v1:status=pending");
     await redisClient.del("point_requests:v1:status=approved");
     await redisClient.del("leaderboard:v1");
   } catch (err) {
@@ -649,6 +659,8 @@ app.post("/api/point-requests/:id/deny", authenticateToken, requireAdmin, async 
     }
 
     res.json({ ok: true, request: result.rows[0] });
+    await redisClient.del("point_requests:v1:status=pending");
+    await redisClient.del("point_requests:v1:status=denied");
   } catch (err) {
     console.error("Deny error:", err);
     res.status(500).json({ error: "Failed to deny request" });
@@ -1070,6 +1082,142 @@ app.patch(
   }
 );
 
+
+// ── Fines ──────────────────────────────────────────────────────────────────
+
+app.post("/api/fines", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
+  const { member_id, amount, reason } = req.body;
+  if (!member_id || !amount || !reason?.trim()) {
+    return res.status(400).json({ error: "member_id, amount, and reason are required" });
+  }
+  if (typeof amount !== "number" || amount <= 0) {
+    return res.status(400).json({ error: "amount must be a positive number" });
+  }
+  try {
+    const result = await pool.query(
+      `INSERT INTO fines (member_id, amount, reason) VALUES ($1, $2, $3) RETURNING *`,
+      [member_id, amount, reason.trim()]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Issue fine error:", err);
+    res.status(500).json({ error: "Failed to issue fine" });
+  }
+});
+
+app.get("/api/fines", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
+  const { member_id } = req.query;
+  try {
+    let query = `SELECT * FROM fines WHERE alleviation_amount < amount`;
+    const params = [];
+    if (member_id) {
+      query += ` AND member_id = $1`;
+      params.push(member_id);
+    }
+    query += ` ORDER BY created_at DESC`;
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fetch fines error:", err);
+    res.status(500).json({ error: "Failed to fetch fines" });
+  }
+});
+
+app.get("/api/me/fines", authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, amount, reason, created_at, alleviation_amount, alleviation_date
+       FROM fines
+       WHERE member_id = $1
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fetch my fines error:", err);
+    res.status(500).json({ error: "Failed to fetch fines" });
+  }
+});
+
+app.get("/api/fines/all", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT f.id, f.amount, f.reason, f.created_at, f.alleviation_amount, f.alleviation_date,
+              m.full_name AS member_name
+       FROM fines f
+       JOIN members m ON m.id = f.member_id
+       ORDER BY f.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fetch all fines error:", err);
+    res.status(500).json({ error: "Failed to fetch fines" });
+  }
+});
+
+app.patch("/api/fines/:id/amount", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+  if (typeof amount !== "number" || amount <= 0) {
+    return res.status(400).json({ error: "amount must be a positive number" });
+  }
+  try {
+    const { rows } = await pool.query(`SELECT * FROM fines WHERE id = $1`, [id]);
+    if (!rows.length) return res.status(404).json({ error: "Fine not found" });
+    if (amount < rows[0].alleviation_amount) {
+      return res.status(400).json({ error: "Amount cannot be less than amount already alleviated" });
+    }
+    const result = await pool.query(
+      `UPDATE fines SET amount = $1 WHERE id = $2 RETURNING *`,
+      [amount, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Update fine amount error:", err);
+    res.status(500).json({ error: "Failed to update fine amount" });
+  }
+});
+
+app.get("/api/fines/members-with-fines", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT m.id, m.full_name
+       FROM fines f
+       JOIN members m ON m.id = f.member_id
+       WHERE f.alleviation_amount < f.amount
+       ORDER BY m.full_name ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Fetch members with fines error:", err);
+    res.status(500).json({ error: "Failed to fetch members with fines" });
+  }
+});
+
+app.patch("/api/fines/:id/alleviate", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
+  const { id } = req.params;
+  const { alleviation_amount } = req.body;
+  if (typeof alleviation_amount !== "number" || alleviation_amount <= 0) {
+    return res.status(400).json({ error: "alleviation_amount must be a positive number" });
+  }
+  try {
+    const { rows } = await pool.query(`SELECT * FROM fines WHERE id = $1`, [id]);
+    if (!rows.length) return res.status(404).json({ error: "Fine not found" });
+    const fine = rows[0];
+    const newTotal = fine.alleviation_amount + alleviation_amount;
+    if (newTotal > fine.amount) {
+      return res.status(400).json({ error: "Alleviation amount exceeds outstanding balance" });
+    }
+    const result = await pool.query(
+      `UPDATE fines SET alleviation_amount = $1, alleviation_date = NOW() WHERE id = $2 RETURNING *`,
+      [newTotal, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Alleviate fine error:", err);
+    res.status(500).json({ error: "Failed to alleviate fine" });
+  }
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;

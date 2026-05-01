@@ -14,6 +14,8 @@ import PointsGiven from "./pages/pointsGiven";
 import { useAuth } from "./components/protectedRoute";
 import { AnimatePresence } from "framer-motion";
 import CalendarPage from "./pages/calender";
+import Fines from "./pages/fines";
+import FinesList from "./pages/finesList";
 
 export default function App() {
   const location = useLocation();
@@ -62,6 +64,20 @@ export default function App() {
       <Route
         path="/calendar"
         element={token ? <CalendarPage /> : <Navigate to="/login" replace />}
+      />
+
+      <Route
+        path="/fines"
+        element={token ? <Fines /> : <Navigate to="/login" replace />}
+      />
+
+      <Route
+        path="/fines-list"
+        element={
+          token && (user?.position === "admin" || user?.position === "chief-justice")
+            ? <FinesList />
+            : <Navigate to="/login" replace />
+        }
       />
 
       <Route

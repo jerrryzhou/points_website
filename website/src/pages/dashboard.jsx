@@ -1,12 +1,14 @@
 import Navbar from "../components/navbar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
+import ManageFinesModal from "../components/manageFinesModal";
 // import { isJwtExpired } from "../utils/jwt";
 import { motion } from "framer-motion"
 
 export default function Dashboard() {
-  
+
   const [openGivePoints, setOpenGivePoints] = useState(false);
+  const [openManageFines, setOpenManageFines] = useState(false);
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
@@ -101,11 +103,18 @@ function StatusBadge({ status }) {
               <div className="flex-1 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-semibold text-white">Points History</h2>
-                  {user?.position === "position-holder" && (
-                    <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenGivePoints(true)}>
-                      Give points
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {user?.position === "position-holder" && (
+                      <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenGivePoints(true)}>
+                        Give points
+                      </button>
+                    )}
+                    {(user?.position === "admin" || user?.position === "chief-justice") && (
+                      <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenManageFines(true)}>
+                        Manage Fines
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <ul className="divide-y divide-gray-700">
                   {history.map((h) => (
@@ -167,6 +176,11 @@ function StatusBadge({ status }) {
               onClose={() => setOpenGivePoints(false)}
               members={members}
               giverId={user?.id}
+            />
+            <ManageFinesModal
+              open={openManageFines}
+              onClose={() => setOpenManageFines(false)}
+              members={members}
             />
              </motion.div>
         </div>

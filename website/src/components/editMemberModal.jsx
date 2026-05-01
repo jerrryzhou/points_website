@@ -111,6 +111,7 @@ export default function EditMemberModal({
                 >
                   <option value="member">member</option>
                   <option value="position-holder">position holder</option>
+                  <option value="chief-justice">chief justice</option>
                   <option value="admin">admin</option>
                 </select>
               </div>

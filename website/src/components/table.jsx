@@ -59,7 +59,9 @@ export default function MembersTable({ users = [], onEdit, pageSize = 10 }) {
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       u.position === "admin"
                         ? "bg-red-100 text-red-700"
-                        : u.position === "officer"
+                        : u.position === "chief-justice"
+                        ? "bg-purple-100 text-purple-700"
+                        : u.position === "position-holder"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-green-100 text-green-700"
                     }`}

@@ -35,6 +35,10 @@ export default function Navbar() {
           <Link to="/dashboard" className="text-green-900 hover:text-green-700 font-medium">Dashboard</Link>
           <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium">Leaderboard</Link>
           <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium">Calendar</Link>
+          <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium">Fines</Link>
+          {(user?.position === "admin" || user?.position === "chief-justice") && (
+            <Link to="/fines-list" className="text-green-900 hover:text-green-700 font-medium">Fines List</Link>
+          )}
           {user?.position === "position-holder" && (
             <Link to="/points-given" className="text-green-900 hover:text-green-700 font-medium">Points Given</Link>
           )}
@@ -66,6 +70,10 @@ export default function Navbar() {
           <Link to="/dashboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Dashboard</Link>
           <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
           <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Calendar</Link>
+          <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Fines</Link>
+          {(user?.position === "admin" || user?.position === "chief-justice") && (
+            <Link to="/fines-list" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Fines List</Link>
+          )}
           {user?.position === "position-holder" && (
             <Link to="/points-given" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Points Given</Link>
           )}
