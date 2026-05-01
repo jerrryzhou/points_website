@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
   const [events, setEvents] = useState([]);
+  const [finesTotal, setFinesTotal] = useState(0);
   
   useEffect(() => {
   const token = localStorage.getItem("token");
@@ -34,6 +35,19 @@ export default function Dashboard() {
       localStorage.removeItem("token");
     });
 },[]);
+
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/me/fines`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setFinesTotal(data.reduce((sum, f) => sum + (f.amount - f.alleviation_amount), 0));
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`, {
@@ -97,6 +111,9 @@ function StatusBadge({ status }) {
                  {user ? user.full_name : "\u00A0"}
                 </h1>
                 <h2 className="text-4xl font-bold text-white"> {user ? user.points : "\u00A0"} Points </h2>
+                {finesTotal > 0 && (
+                  <p className="mt-3 text-red-300 font-medium text-lg">${finesTotal} in fines due</p>
+                )}
             </div>
             <div className="max-w-6xl mx-auto mt-10 flex flex-col lg:flex-row gap-6 items-start">
               {/* Points History */}
