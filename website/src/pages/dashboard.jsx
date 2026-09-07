@@ -2,6 +2,7 @@ import Navbar from "../components/navbar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
 import ManageFinesModal from "../components/manageFinesModal";
+import SuggestionBox from "../components/suggestionBox";
 // import { isJwtExpired } from "../utils/jwt";
 import { motion } from "framer-motion"
 
@@ -137,8 +138,8 @@ function StatusBadge({ status }) {
                   {history.map((h) => (
                     <li key={h.id} className="py-3 flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-200 font-medium truncate">{h.reason}</span>
+                        <div className="flex items-start gap-2 min-w-0">
+                          <span className="text-gray-200 font-medium break-words min-w-0 max-w-[200px] sm:max-w-xs">{h.reason}</span>
                           <StatusBadge status={h.status} />
                         </div>
                         <div className="text-gray-300 text-sm">From: {h.giver_name}</div>
@@ -160,32 +161,35 @@ function StatusBadge({ status }) {
               </div>
 
               {/* Upcoming Events */}
-              <div className="w-full lg:w-80 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg shrink-0">
-                <h2 className="text-2xl font-semibold text-white mb-4">Upcoming Events</h2>
-                <ul className="space-y-3">
-                  {events.map((ev) => {
-                    const start = new Date(ev.start_datetime);
-                    return (
-                      <li key={ev.id} className="flex gap-3 items-start">
-                        <div
-                          className="mt-1 w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: ev.color || "rgba(255,255,255,0.5)" }}
-                        />
-                        <div className="min-w-0">
-                          <div className="text-white font-medium truncate">{ev.title}</div>
-                          <div className="text-gray-300 text-sm">
-                            {ev.all_day
-                              ? start.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-                              : start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+              <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0">
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                  <h2 className="text-2xl font-semibold text-white mb-4">Upcoming Events</h2>
+                  <ul className="space-y-3">
+                    {events.map((ev) => {
+                      const start = new Date(ev.start_datetime);
+                      return (
+                        <li key={ev.id} className="flex gap-3 items-start">
+                          <div
+                            className="mt-1 w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: ev.color || "rgba(255,255,255,0.5)" }}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-white font-medium truncate">{ev.title}</div>
+                            <div className="text-gray-300 text-sm">
+                              {ev.all_day
+                                ? start.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                                : start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            </div>
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                  {events.length === 0 && (
-                    <li className="text-gray-200 text-sm">No upcoming events.</li>
-                  )}
-                </ul>
+                        </li>
+                      );
+                    })}
+                    {events.length === 0 && (
+                      <li className="text-gray-200 text-sm">No upcoming events.</li>
+                    )}
+                  </ul>
+                </div>
+                <SuggestionBox />
               </div>
             </div>
             <GivePointsModal

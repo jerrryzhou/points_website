@@ -32,11 +32,13 @@ export default function FinesHistoryTable({ fines = [], pageSize = 30, onUpdateA
 
   const saveEdit = async (f) => {
     const n = Number(draftAmount);
-    if (!Number.isFinite(n) || n <= 0) return alert("Amount must be a positive number");
+    if (!Number.isInteger(n) || n <= 0) return alert("Amount must be a positive whole number");
     try {
       setSaving(true);
       await onUpdateAmount?.(f.id, n);
       cancelEdit();
+    } catch (err) {
+      alert(err.message || "Failed to update amount");
     } finally {
       setSaving(false);
     }
@@ -75,6 +77,7 @@ export default function FinesHistoryTable({ fines = [], pageSize = 30, onUpdateA
                       <input
                         type="number"
                         min="1"
+                        step="1"
                         value={draftAmount}
                         onChange={(e) => setDraftAmount(e.target.value)}
                         className="w-24 px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white focus:outline-none focus:ring-2 focus:ring-green-400 text-right"

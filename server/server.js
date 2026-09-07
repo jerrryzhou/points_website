@@ -79,6 +79,11 @@ const forgotLimiter = rateLimit({
   max: 10,
 });
 
+const suggestionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+});
+
 export function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -1090,8 +1095,8 @@ app.post("/api/fines", authenticateToken, requireAdminOrChiefJustice, async (req
   if (!member_id || !amount || !reason?.trim()) {
     return res.status(400).json({ error: "member_id, amount, and reason are required" });
   }
-  if (typeof amount !== "number" || amount <= 0) {
-    return res.status(400).json({ error: "amount must be a positive number" });
+  if (typeof amount !== "number" || !Number.isInteger(amount) || amount <= 0) {
+    return res.status(400).json({ error: "amount must be a positive whole number" });
   }
   try {
     const result = await pool.query(
@@ -1142,7 +1147,7 @@ app.get("/api/me/fines", authenticateToken, async (req, res) => {
 app.get("/api/fines/all", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT f.id, f.amount, f.reason, f.created_at, f.alleviation_amount, f.alleviation_date,
+      `SELECT f.id, f.member_id, f.amount, f.reason, f.created_at, f.alleviation_amount, f.alleviation_date,
               m.full_name AS member_name
        FROM fines f
        JOIN members m ON m.id = f.member_id
@@ -1158,8 +1163,8 @@ app.get("/api/fines/all", authenticateToken, requireAdminOrChiefJustice, async (
 app.patch("/api/fines/:id/amount", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
   const { id } = req.params;
   const { amount } = req.body;
-  if (typeof amount !== "number" || amount <= 0) {
-    return res.status(400).json({ error: "amount must be a positive number" });
+  if (typeof amount !== "number" || !Number.isInteger(amount) || amount <= 0) {
+    return res.status(400).json({ error: "amount must be a positive whole number" });
   }
   try {
     const { rows } = await pool.query(`SELECT * FROM fines WHERE id = $1`, [id]);
@@ -1197,8 +1202,8 @@ app.get("/api/fines/members-with-fines", authenticateToken, requireAdminOrChiefJ
 app.patch("/api/fines/:id/alleviate", authenticateToken, requireAdminOrChiefJustice, async (req, res) => {
   const { id } = req.params;
   const { alleviation_amount } = req.body;
-  if (typeof alleviation_amount !== "number" || alleviation_amount <= 0) {
-    return res.status(400).json({ error: "alleviation_amount must be a positive number" });
+  if (typeof alleviation_amount !== "number" || !Number.isInteger(alleviation_amount) || alleviation_amount <= 0) {
+    return res.status(400).json({ error: "alleviation_amount must be a positive whole number" });
   }
   try {
     const { rows } = await pool.query(`SELECT * FROM fines WHERE id = $1`, [id]);
@@ -1216,6 +1221,71 @@ app.patch("/api/fines/:id/alleviate", authenticateToken, requireAdminOrChiefJust
   } catch (err) {
     console.error("Alleviate fine error:", err);
     res.status(500).json({ error: "Failed to alleviate fine" });
+  }
+});
+
+app.post("/api/suggestions", authenticateToken, suggestionLimiter, async (req, res) => {
+  try {
+    const { body } = req.body;
+    if (!body || typeof body !== "string" || !body.trim()) {
+      return res.status(400).json({ error: "Suggestion text is required" });
+    }
+    if (body.trim().length > 2000) {
+      return res.status(400).json({ error: "Suggestion is too long" });
+    }
+
+    // Anonymous by design: no user/member id is stored alongside the suggestion.
+    await pool.query(
+      `INSERT INTO suggestions (body) VALUES ($1)`,
+      [body.trim()]
+    );
+
+    res.status(201).json({ message: "Suggestion submitted" });
+  } catch (err) {
+    console.error("Error creating suggestion:", err);
+    res.status(500).json({ error: "Failed to submit suggestion" });
+  }
+});
+
+app.get("/api/suggestions", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const status = (req.query.status || "new").toLowerCase();
+    if (!["new", "archived"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Number(req.query.offset) || 0;
+
+    const result = await pool.query(
+      `SELECT id, body, status, created_at FROM suggestions
+       WHERE status = $1
+       ORDER BY created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [status, limit, offset]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching suggestions:", err);
+    res.status(500).json({ error: "Failed to load suggestions" });
+  }
+});
+
+app.patch("/api/suggestions/:id/status", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!["new", "archived"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+    const result = await pool.query(
+      `UPDATE suggestions SET status = $1 WHERE id = $2 RETURNING id, body, status, created_at`,
+      [status, id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: "Suggestion not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error updating suggestion status:", err);
+    res.status(500).json({ error: "Failed to update suggestion" });
   }
 });
 

@@ -35,12 +35,10 @@ export default function FinesList() {
     for (const f of fines) {
       const outstanding = f.amount - f.alleviation_amount;
       if (outstanding <= 0) continue;
-      if (!map[f.member_name]) map[f.member_name] = 0;
-      map[f.member_name] += outstanding;
+      if (!map[f.member_id]) map[f.member_id] = { id: f.member_id, name: f.member_name, amount: 0 };
+      map[f.member_id].amount += outstanding;
     }
-    return Object.entries(map)
-      .map(([name, amount]) => ({ name, amount }))
-      .sort((a, b) => b.amount - a.amount);
+    return Object.values(map).sort((a, b) => b.amount - a.amount);
   }, [fines]);
 
   const handleUpdateAmount = async (fineId, newAmount) => {
@@ -95,8 +93,8 @@ export default function FinesList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
-                  {memberSummary.map(({ name, amount }) => (
-                    <tr key={name} className="hover:bg-white/5">
+                  {memberSummary.map(({ id, name, amount }) => (
+                    <tr key={id} className="hover:bg-white/5">
                       <td className="px-6 py-4 font-medium text-white">{name}</td>
                       <td className="px-6 py-4 text-right font-semibold text-red-400">${amount}</td>
                     </tr>

@@ -2,6 +2,7 @@ import AdminNavbar from "../components/adminNavabar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
 import ManageFinesModal from "../components/manageFinesModal";
+import SuggestionBox from "../components/suggestionBox";
 // import { isJwtExpired } from "../utils/jwt";
 import { motion } from "framer-motion"
 
@@ -13,6 +14,10 @@ export default function AdminDashboard() {
   const [history, setHistory] = useState([]);
   const [events, setEvents] = useState([]);
   const [finesTotal, setFinesTotal] = useState(0);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsStatus, setSuggestionsStatus] = useState("new");
+  const [suggestionsHasMore, setSuggestionsHasMore] = useState(false);
+  const SUGGESTIONS_PAGE_SIZE = 50;
 
   useEffect(() => {
   const token = localStorage.getItem("token");
@@ -92,6 +97,40 @@ export default function AdminDashboard() {
     });
 }, []);
 
+  const fetchSuggestions = (status, offset, append) => {
+    fetch(
+      `${process.env.REACT_APP_API_URL}/api/suggestions?status=${status}&limit=${SUGGESTIONS_PAGE_SIZE}&offset=${offset}`,
+      { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        const rows = Array.isArray(data) ? data : [];
+        setSuggestions((prev) => (append ? [...prev, ...rows] : rows));
+        setSuggestionsHasMore(rows.length === SUGGESTIONS_PAGE_SIZE);
+      })
+      .catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchSuggestions(suggestionsStatus, 0, false);
+  }, [suggestionsStatus]);
+
+  const archiveSuggestion = (id, status) => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/suggestions/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ status }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to update suggestion");
+        setSuggestions((prev) => prev.filter((s) => s.id !== id));
+      })
+      .catch(console.error);
+  };
+
 function StatusBadge({ status }) {
   const styles =
     status === "approved"
@@ -146,8 +185,8 @@ function StatusBadge({ status }) {
                   {Array.isArray(history) && history.map((h) => (
                     <li key={h.id} className="py-3 flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-200 font-medium truncate">{h.reason}</span>
+                        <div className="flex items-start gap-2 min-w-0">
+                          <span className="text-gray-200 font-medium break-words min-w-0 max-w-[200px] sm:max-w-xs">{h.reason}</span>
                           <StatusBadge status={h.status} />
                         </div>
                         <div className="text-gray-300 text-sm">From: {h.giver_name}</div>
@@ -169,32 +208,88 @@ function StatusBadge({ status }) {
               </div>
 
               {/* Upcoming Events */}
-              <div className="w-full lg:w-80 bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg shrink-0">
-                <h2 className="text-2xl font-semibold text-white mb-4">Upcoming Events</h2>
-                <ul className="space-y-3">
-                  {events.map((ev) => {
-                    const start = new Date(ev.start_datetime);
-                    return (
-                      <li key={ev.id} className="flex gap-3 items-start">
-                        <div
-                          className="mt-1 w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: ev.color || "rgba(255,255,255,0.5)" }}
-                        />
-                        <div className="min-w-0">
-                          <div className="text-white font-medium truncate">{ev.title}</div>
-                          <div className="text-gray-300 text-sm">
-                            {ev.all_day
-                              ? start.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-                              : start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+              <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0">
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                  <h2 className="text-2xl font-semibold text-white mb-4">Upcoming Events</h2>
+                  <ul className="space-y-3">
+                    {events.map((ev) => {
+                      const start = new Date(ev.start_datetime);
+                      return (
+                        <li key={ev.id} className="flex gap-3 items-start">
+                          <div
+                            className="mt-1 w-3 h-3 rounded-full shrink-0"
+                            style={{ backgroundColor: ev.color || "rgba(255,255,255,0.5)" }}
+                          />
+                          <div className="min-w-0">
+                            <div className="text-white font-medium truncate">{ev.title}</div>
+                            <div className="text-gray-300 text-sm">
+                              {ev.all_day
+                                ? start.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                                : start.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            </div>
                           </div>
+                        </li>
+                      );
+                    })}
+                    {events.length === 0 && (
+                      <li className="text-gray-200 text-sm">No upcoming events.</li>
+                    )}
+                  </ul>
+                </div>
+                <SuggestionBox />
+                <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-semibold text-white">Suggestions</h2>
+                    <div className="flex gap-3 text-sm">
+                      {["new", "archived"].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setSuggestionsStatus(s)}
+                          className={`capitalize pb-1 border-b-2 ${
+                            suggestionsStatus === s
+                              ? "border-white text-white"
+                              : "border-transparent text-gray-300 hover:text-white"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <ul className="space-y-3 max-h-80 overflow-y-auto">
+                    {suggestions.map((s) => (
+                      <li key={s.id} className="bg-white/5 rounded-lg p-3">
+                        <p className="text-gray-100 text-sm break-words">{s.body}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-gray-400 text-xs">
+                            {new Date(s.created_at).toLocaleString()}
+                          </p>
+                          <button
+                            onClick={() =>
+                              archiveSuggestion(s.id, suggestionsStatus === "new" ? "archived" : "new")
+                            }
+                            className="text-xs text-green-300 hover:text-green-200 font-medium"
+                          >
+                            {suggestionsStatus === "new" ? "Archive" : "Restore"}
+                          </button>
                         </div>
                       </li>
-                    );
-                  })}
-                  {events.length === 0 && (
-                    <li className="text-gray-200 text-sm">No upcoming events.</li>
+                    ))}
+                    {suggestions.length === 0 && (
+                      <li className="text-gray-200 text-sm">
+                        No {suggestionsStatus} suggestions.
+                      </li>
+                    )}
+                  </ul>
+                  {suggestionsHasMore && (
+                    <button
+                      onClick={() => fetchSuggestions(suggestionsStatus, suggestions.length, true)}
+                      className="mt-3 w-full text-center text-sm text-gray-300 hover:text-white"
+                    >
+                      Load more
+                    </button>
                   )}
-                </ul>
+                </div>
               </div>
             </div>
             <GivePointsModal

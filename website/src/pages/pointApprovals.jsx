@@ -92,7 +92,7 @@ export default function PointApprovals() {
               key={req.id}
               className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-white/10 p-2 rounded-lg mb-3 last:mb-0"
             >
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xl font-semibold text-white">
                   {req.recipient_name}
                   <span className="text-gray-200 font-normal"> ({req.points > 0 ? "+" : ""}{req.points})</span>
@@ -106,7 +106,7 @@ export default function PointApprovals() {
                   To: <span className="font-medium">{req.recipient_name}</span>
                 </p>
 
-                <p className="text-gray-200">
+                <p className="text-gray-200 break-words">
                   Reason: <span className="font-medium">{req.reason}</span>
                 </p>
 

@@ -60,6 +60,11 @@ export default function ManageFinesModal({ open, onClose, members }) {
 
   const handleGive = async (e) => {
     e.preventDefault();
+    const amt = Number(amount);
+    if (!Number.isInteger(amt) || amt <= 0) {
+      alert("Amount must be a positive whole number");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`${process.env.REACT_APP_API_URL}/api/fines`, {
@@ -70,7 +75,7 @@ export default function ManageFinesModal({ open, onClose, members }) {
         },
         body: JSON.stringify({
           member_id: Number(memberId),
-          amount: Number(amount),
+          amount: amt,
           reason: reason.trim(),
         }),
       });
@@ -88,6 +93,11 @@ export default function ManageFinesModal({ open, onClose, members }) {
 
   const handleAlleviate = async (e) => {
     e.preventDefault();
+    const amt = Number(alleviationAmount);
+    if (!Number.isInteger(amt) || amt <= 0) {
+      alert("Amount must be a positive whole number");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(
@@ -98,7 +108,7 @@ export default function ManageFinesModal({ open, onClose, members }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ alleviation_amount: Number(alleviationAmount) }),
+          body: JSON.stringify({ alleviation_amount: amt }),
         }
       );
       if (!res.ok) {
@@ -193,6 +203,7 @@ export default function ManageFinesModal({ open, onClose, members }) {
                   <input
                     type="number"
                     min="1"
+                    step="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
@@ -294,6 +305,7 @@ export default function ManageFinesModal({ open, onClose, members }) {
                     <input
                       type="number"
                       min="1"
+                      step="1"
                       max={selectedFine.amount - selectedFine.alleviation_amount}
                       value={alleviationAmount}
                       onChange={(e) => {
