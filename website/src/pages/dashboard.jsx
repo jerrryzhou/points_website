@@ -1,7 +1,6 @@
 import Navbar from "../components/navbar";
 import { useState, useEffect } from "react"
 import GivePointsModal from "../components/pointRequestModal";
-import ManageFinesModal from "../components/manageFinesModal";
 import SuggestionBox from "../components/suggestionBox";
 // import { isJwtExpired } from "../utils/jwt";
 import { motion } from "framer-motion"
@@ -9,7 +8,6 @@ import { motion } from "framer-motion"
 export default function Dashboard() {
 
   const [openGivePoints, setOpenGivePoints] = useState(false);
-  const [openManageFines, setOpenManageFines] = useState(false);
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
   const [user, setUser] = useState(null);
@@ -127,11 +125,6 @@ function StatusBadge({ status }) {
                         Give points
                       </button>
                     )}
-                    {(user?.position === "admin" || user?.position === "chief-justice") && (
-                      <button className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium" onClick={() => setOpenManageFines(true)}>
-                        Manage Fines
-                      </button>
-                    )}
                   </div>
                 </div>
                 <ul className="divide-y divide-gray-700">
@@ -197,11 +190,6 @@ function StatusBadge({ status }) {
               onClose={() => setOpenGivePoints(false)}
               members={members}
               giverId={user?.id}
-            />
-            <ManageFinesModal
-              open={openManageFines}
-              onClose={() => setOpenManageFines(false)}
-              members={members}
             />
              </motion.div>
         </div>

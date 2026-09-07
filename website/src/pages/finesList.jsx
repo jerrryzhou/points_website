@@ -3,10 +3,13 @@ import { motion } from "framer-motion";
 import Navbar from "../components/navbar";
 import AdminNavbar from "../components/adminNavabar";
 import FinesHistoryTable from "../components/finesHistoryTable";
+import ManageFinesModal from "../components/manageFinesModal";
 
 export default function FinesList() {
   const [fines, setFines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [members, setMembers] = useState([]);
+  const [openManageFines, setOpenManageFines] = useState(false);
   const user = JSON.parse(localStorage.getItem("user"));
 
   const fetchFines = async () => {
@@ -24,6 +27,15 @@ export default function FinesList() {
   };
 
   useEffect(() => { fetchFines(); }, []);
+
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_API_URL}/api/get-approved-users`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    })
+      .then((r) => r.json())
+      .then(setMembers)
+      .catch(console.error);
+  }, []);
 
   const totalOutstanding = useMemo(
     () => fines.reduce((sum, f) => sum + (f.amount - f.alleviation_amount), 0),
@@ -68,11 +80,21 @@ export default function FinesList() {
       >
         <div className="max-w-5xl mx-auto mt-10 px-4 space-y-6">
           {/* Total outstanding */}
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg">
-            <p className="text-white/70 text-sm font-medium uppercase tracking-wide">
-              Total Outstanding (All Members)
-            </p>
-            <p className="text-5xl font-bold text-white mt-1">${totalOutstanding}</p>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-lg flex items-start justify-between gap-4">
+            <div>
+              <p className="text-white/70 text-sm font-medium uppercase tracking-wide">
+                Total Outstanding (All Members)
+              </p>
+              <p className="text-5xl font-bold text-white mt-1">${totalOutstanding}</p>
+            </div>
+            {(user?.position === "admin" || user?.position === "chief-justice") && (
+              <button
+                className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg text-base font-medium shrink-0"
+                onClick={() => setOpenManageFines(true)}
+              >
+                Manage Fines
+              </button>
+            )}
           </div>
 
           {/* Per-member summary */}
@@ -118,6 +140,14 @@ export default function FinesList() {
           </div>
         </div>
       </motion.div>
+      <ManageFinesModal
+        open={openManageFines}
+        onClose={() => {
+          setOpenManageFines(false);
+          fetchFines();
+        }}
+        members={members}
+      />
     </div>
   );
 }

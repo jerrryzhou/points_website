@@ -34,7 +34,7 @@ export default function AdminNavbar() {
           <Link to="/admin/dashboard" className="text-green-900 hover:text-green-700 font-medium">Dashboard</Link>
           <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium">Leaderboard</Link>
           <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium">Calendar</Link>
-          <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium">Fines</Link>
+          <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium">My Fines</Link>
           <Link to="/fines-list" className="text-green-900 hover:text-green-700 font-medium">Fines List</Link>
           <Link to="/admin/approvals" className="text-green-900 hover:text-green-700 font-medium">Account Approvals</Link>
           <Link to="/admin/point-approvals" className="text-green-900 hover:text-green-700 font-medium">Point Approvals</Link>
@@ -68,7 +68,7 @@ export default function AdminNavbar() {
           <Link to="/admin/dashboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Dashboard</Link>
           <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
           <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Calendar</Link>
-          <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Fines</Link>
+          <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>My Fines</Link>
           <Link to="/fines-list" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Fines List</Link>
           <Link to="/admin/approvals" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Account Approvals</Link>
           <Link to="/admin/point-approvals" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Point Approvals</Link>
