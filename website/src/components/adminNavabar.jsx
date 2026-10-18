@@ -30,9 +30,10 @@ export default function AdminNavbar() {
         <span className="text-green-800 font-semibold text-2xl">ΔΣΦ</span>
 
         {/* Desktop links */}
-        <div className="hidden md:flex space-x-6">
+        <div className="hidden xl:flex space-x-6">
           <Link to="/admin/dashboard" className="text-green-900 hover:text-green-700 font-medium">Dashboard</Link>
           <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium">Leaderboard</Link>
+          <Link to="/resources" className="text-green-900 hover:text-green-700 font-medium">Member Resources</Link>
           <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium">Calendar</Link>
           <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium">My Fines</Link>
           <Link to="/fines-list" className="text-green-900 hover:text-green-700 font-medium">Fines List</Link>
@@ -51,9 +52,11 @@ export default function AdminNavbar() {
           </button>
           {/* Hamburger */}
           <button
-            className="md:hidden flex flex-col gap-1.5 p-1"
+            className="xl:hidden flex flex-col gap-1.5 p-1"
             onClick={() => setMenuOpen((o) => !o)}
             aria-label="Toggle menu"
+            aria-expanded={menuOpen}
+            aria-controls="admin-navigation-menu"
           >
             <span className="block w-6 h-0.5 bg-green-800" />
             <span className="block w-6 h-0.5 bg-green-800" />
@@ -64,9 +67,10 @@ export default function AdminNavbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="md:hidden flex flex-col gap-3 pt-3 pb-1">
+        <div id="admin-navigation-menu" className="xl:hidden flex flex-col gap-3 pt-3 pb-1">
           <Link to="/admin/dashboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Dashboard</Link>
           <Link to="/leaderboard" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Leaderboard</Link>
+          <Link to="/resources" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Member Resources</Link>
           <Link to="/calendar" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Calendar</Link>
           <Link to="/fines" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>My Fines</Link>
           <Link to="/fines-list" className="text-green-900 hover:text-green-700 font-medium" onClick={() => setMenuOpen(false)}>Fines List</Link>

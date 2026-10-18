@@ -15,7 +15,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
-COPY server.js ./
+COPY server.js resources.js ./
 
 EXPOSE 5000
 USER node

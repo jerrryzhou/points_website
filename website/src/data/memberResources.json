@@ -1,0 +1,18 @@
+{
+  "portals": [
+    { "id": "my-delta-sig", "name": "My Delta Sig", "description": "Your Delta Sigma Phi member portal.", "icon": "user", "url": "https://my.deltasig.org/home" },
+    { "id": "bill-highway", "name": "Bill Highway", "description": "National and local chapter dues.", "icon": "card", "url": "https://www.billhighway.com/aph/forchapters/home.aspx" },
+    { "id": "alpha-management", "name": "Alpha Mgmt", "description": "Housing, meal plans, and agreements.", "icon": "home", "url": "https://alphamg.twa.rentmanager.com/Shared/Login?locationID=1" }
+  ],
+  "libraries": [
+    { "id": "chapter", "name": "Chapter Notes", "description": "Meeting minutes and records.", "icon": "document", "folderId": "1ZqXg5_tecuyRPlI31WqFekic35PaHtIX" },
+    { "id": "academic", "name": "Academic Resources", "description": "Past exams and assignments.", "icon": "academic", "folderId": "1nkG81KBkCJpLAWgXyqmKswqVjrwkYNcx" },
+    { "id": "transition", "name": "Transition Documents", "description": "Officer guides and handoffs.", "icon": "folder", "fileId": "1k_x3sEVQQpBRyiIVZ9uVdVH4OShzFdz2_LspZArCDFM" }
+  ],
+  "report": {
+    "name": "Anonymous Standards Report",
+    "description": "Share a statement of concern.",
+    "icon": "shield",
+    "url": "https://docs.google.com/forms/d/e/1FAIpQLScQ8AfWflIeP8yNKOLsxeo36s9wZ6GDwvrCWINidiUiL3sulA/viewform"
+  }
+}

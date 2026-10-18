@@ -16,6 +16,7 @@ import { AnimatePresence } from "framer-motion";
 import CalendarPage from "./pages/calender";
 import Fines from "./pages/fines";
 import FinesList from "./pages/finesList";
+import MemberResources from "./pages/memberResources";
 
 export default function App() {
   const location = useLocation();
@@ -45,6 +46,9 @@ export default function App() {
           )
         }
       />
+
+      <Route path="/resources" element={<MemberResources />} />
+      <Route path="/resources/:libraryId" element={<MemberResources />} />
 
       <Route path="/register" element={<Registration />} />
 

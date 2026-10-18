@@ -9,6 +9,7 @@ import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 import nodemailer from "nodemailer";
 import { createClient } from 'redis';
+import { registerResourceRoutes } from './resources.js';
 
 
 const ALLOWED_POSITIONS = new Set(["member", "position-holder", "chief-justice", "admin"]);
@@ -112,6 +113,8 @@ function authenticateToken(req, res, next) {
   }
    
 }
+
+registerResourceRoutes(app, authenticateToken);
 
 function requireAdmin(req, res, next) {
   if (req.user?.position !== "admin") {
